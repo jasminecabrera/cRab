@@ -9,10 +9,6 @@ editor: visual
 **pipeline:**
 
 ```{r}
-
-```
-
-```{r}
 # crab prep grabs data obj, original cols; user chosen attrib. are NULL 
 penguins |>
   crab_prep()
@@ -37,11 +33,11 @@ penguins |>
 penguins |>
   crab_prep() |>
   crab_cols(c("flipper_length_mm", "bill_length_mm")) |>
-  crab_params(min_k = 2, max_k = 5, num_subsamples = 10)
+  crab_params(min_k = 2, max_k = 5, num_subsamples = 10, cluster_method = "kmeans")
 ```
 
 ```{r}
-# error messages left if required params arent lifted
+# error messages left if required params arent listed
 penguins |>
   crab_prep() |>
   crab_cols(c("flipper_length_mm", "bill_length_mm")) |>
@@ -58,7 +54,7 @@ penguins |>
 penguins |>
   crab_prep() |>
   crab_cols(c("flipper_length_mm", "bill_length_mm")) |>
-  crab_params(min_k = 2, max_k = 5, num_subsamples = 10) |>
+  crab_params(min_k = 2, max_k = 5, num_subsamples = 10, cluster_method = "kmeans") |>
   crab_bake()
 ```
 
@@ -75,7 +71,8 @@ simulated_data <- simulate_mvn()
 # create crab_setup with data, prep, and sim. params pipeline
 crab_setup1 <- simulated_data |>
   crab_prep() |>
-  crab_sim_params(min_k = 2, max_k = 3, num_subsamples = 10, num_runs = 2, covariance = 0.3)
+  crab_sim_params(min_k = 2, max_k = 5, num_subsamples = 10, num_runs = 2, 
+                  covariance = 0.3, cluster_method = "kmeans")
 
 repeat_simulations(crab_setup1)
 ```
@@ -86,26 +83,37 @@ repeat_simulations(crab_setup1)
 simulated_data <- simulate_mvn()
 
 # create crab_setup with data, prep, and sim. params pipeline
-crab_setup1 <- simulated_data |>
+crab_setup2 <- simulated_data |>
   crab_prep() |>
-  crab_sim_params(min_k = 2, max_k = 3, num_subsamples = 10, 
-                  num_runs = 2, covariance = c(0.3, 0.4))
+  crab_sim_params(min_k = 2, max_k = 5, num_subsamples = 10, 
+                  num_runs = 2, covariance = c(0.3, 0.4),
+                  cluster_method = "kmeans")
 
-repeat_simulations(crab_setup1)
+repeat_simulations(crab_setup2)
 
 ## OPTION 2:
 # create crab_setup with prep(data), and sim. params pipeline
-crab_setup1 <- crab_prep(simulated_data) |>
-  crab_sim_params(min_k = 2, max_k = 3, num_subsamples = 10, 
-                  num_runs = 2, covariance = c(0.3, 0.4))
+crab_setup3 <- crab_prep(simulated_data) |>
+  crab_sim_params(min_k = 2, max_k = 5, num_subsamples = 10, 
+                  num_runs = 2, covariance = c(0.3, 0.4),
+                  cluster_method = "kmeans")
 
-repeat_simulations(crab_setup1)
+repeat_simulations(crab_setup3)
+```
+
+```{r}
+# error messages if additional params. listed on top of crab_setup
+crab_setup4 <- crab_prep(simulated_data) |>
+  crab_sim_params(min_k = 2, max_k = 5, num_subsamples = 10, 
+                  num_runs = 2, covariance = c(0.3, 0.4), cluster_method = "kmeans")
+
+repeat_simulations(crab_setup4, covariance = c(0.1, 0.2))
 ```
 
 **individual function:**
 
 ```{r}
 # automatically calls simulate_mvn()
-repeat_simulations(min_k = 2, max_k = 3, num_subsamples = 10, 
-                   num_runs = 2, covariance = c(0.3, 0.4))
+repeat_simulations(min_k = 2, max_k = 5, num_subsamples = 10, 
+                   num_runs = 2, covariance = c(0.3, 0.4), cluster_method = "kmeans")
 ```
