@@ -5,7 +5,7 @@ format: html
 editor: visual
 ---
 
-# Functions (Updated: 02/02/2026)
+# Functions (Updated: 03/02/2026)
 
 ## Libraries & Parallelization
 
@@ -99,7 +99,8 @@ buddies_matrix <- function(data = data,
                            k = 3,
                            subsample_prop = 0.8, 
                            num_subsamples = 10,
-                           start_seed = 123){
+                           start_seed = 123, 
+                           cluster_method){
   
   # drop na
   data <- data |>
@@ -131,10 +132,13 @@ buddies_matrix <- function(data = data,
                        random_sample <- data |>
                          filter(index %in% sample(index, subsample_prop * nrow(data))) 
                        
+                       if (cluster_method != "kmeans"){
+                         stop("Error: Clustering method does not currently work. Please change to 'kmeans'.")}
+                       
                        # kmeans
-                       kmodel <- k_means(num_clusters = k) |>
+                       else {kmodel <- k_means(num_clusters = k) |>
                          fit(~ random_sample[[1]] + random_sample[[2]],
-                             data = random_sample)
+                             data = random_sample)}
 
                        
                        # assign points to cluster
@@ -161,7 +165,7 @@ buddies_matrix <- function(data = data,
                       # set lower triangle and diagonal to NA
                       result_matrix[lower.tri(result_matrix, diag = TRUE)] <- NA
                       
-                    
+                                   
                       return(result_matrix)}
                     
   # return results
@@ -177,14 +181,16 @@ mean_matrix <- function(data = data,
                           k = 3,
                           subsample_prop = 0.8,
                           num_subsamples = 10,
-                          start_seed = 123){
+                          start_seed = 123,
+                        cluster_method){
   
   # call simulate_cluster() function
   results <- buddies_matrix(data, 
-                              k = k,
-                              subsample_prop = subsample_prop, 
-                              num_subsamples = num_subsamples,
-                              start_seed = start_seed)
+                            k = k,
+                            subsample_prop = subsample_prop, 
+                            num_subsamples = num_subsamples,
+                            start_seed = start_seed,
+                            cluster_method = cluster_method)
   
   # abs value the entire matrix for all matrices
   absolute_sum <- lapply(results, abs)
@@ -231,7 +237,8 @@ crab <- function(data,
                   max_k = 5,
                   subsample_prop = 0.8, 
                   num_subsamples = 10,
-                  start_seed = 123){
+                  start_seed = 123,
+                  cluster_method){
   
   # intialize score list
   k_scores <- data.frame(k = numeric(),
@@ -250,7 +257,8 @@ crab <- function(data,
                                  k = k, 
                                  subsample_prop = subsample_prop, 
                                  num_subsamples = num_subsamples, 
-                                 start_seed = start_seed)
+                                 start_seed = start_seed,
+                                 cluster_method = cluster_method)
       
       # store all scores
       score <- similarity_score(mean_matrix = mean_matrix)
@@ -291,7 +299,17 @@ repeat_simulations <- function(crab_setup = NULL,
                                max_k,
                                subsample_prop = 0.8, 
                                num_subsamples,
-                               start_seed = 123) {
+                               start_seed = 123,
+                               cluster_method) {
+  
+  # check covariance
+  if (!is.null(crab_setup) && !missing(covariance)) {
+    stop("Error: Specify either crab_setup OR covariance, not both.")}
+  
+  if (is.null(crab_setup) && missing(covariance)) {
+  stop("Error: You must specify either crab_setup or covariance.")} 
+  
+  
   
   if (!is.null(crab_setup)){
     # assign data
@@ -309,6 +327,7 @@ repeat_simulations <- function(crab_setup = NULL,
     max_k = params$max_k
     subsample_prop = params$subsample_prop
     num_subsamples = params$num_subsamples
+    cluster_method = params$cluster_method
     
      if(!is.null(params$covariance)){
       covariance = params$covariance
@@ -342,7 +361,8 @@ repeat_simulations <- function(crab_setup = NULL,
                          min_k = min_k,
                          max_k = max_k,
                          subsample_prop = subsample_prop, 
-                         num_subsamples = num_subsamples)
+                         num_subsamples = num_subsamples,
+                         cluster_method = cluster_method)
       
       # add rep identifier
       sim_result$run <- i
@@ -402,7 +422,7 @@ crab_cols <- function(data_info, chosen_cols){
 
 ```{r}
 crab_params <- function(data_info, min_k, max_k, num_subsamples, 
-                        subsample_prop = 0.8){
+                        subsample_prop = 0.8, cluster_method){
   # check min_k and max_k
   if (min_k > max_k){
     stop("Error: min_k must be <= max_k.")}
@@ -411,12 +431,17 @@ crab_params <- function(data_info, min_k, max_k, num_subsamples,
   if (subsample_prop >= 1){
     stop("Error: subsample_prop must be < 1.")}
   
+  # check cluster method
+  if (cluster_method != "kmeans"){
+    stop("Error: Clustering method does not currently work. Please change to 'kmeans'.")}
+  
   # update specified params
   data_info$specified_params <- list(
     min_k = min_k,
     max_k = max_k,
     num_subsamples = num_subsamples,
-    subsample_prop = subsample_prop)
+    subsample_prop = subsample_prop,
+    cluster_method = cluster_method)
   
   return(data_info)}
 ```
@@ -428,7 +453,7 @@ crab_params <- function(data_info, min_k, max_k, num_subsamples,
 ```{r}
 crab_sim_params <- function(data_info, min_k, max_k, num_subsamples, 
                             n = 100, covariance, desired_k = 3, 
-                            subsample_prop = 0.8, num_runs){
+                            subsample_prop = 0.8, num_runs, cluster_method){
   # check min_k and max_k
   if (min_k > max_k){
     stop("Error: min_k must be <= max_k.")}
@@ -447,6 +472,10 @@ crab_sim_params <- function(data_info, min_k, max_k, num_subsamples,
   if (num_runs < 0){
     stop("Error: num_runs must be > 0.")}
   
+  # check cluster method
+  if (cluster_method != "kmeans"){
+    stop("Error: Clustering method does not currently work. Please change to 'kmeans'.")}
+  
   # update specified params
   data_info$specified_params <- list(
     min_k = min_k,
@@ -456,7 +485,8 @@ crab_sim_params <- function(data_info, min_k, max_k, num_subsamples,
     covariance = covariance,
     desired_k = desired_k,
     subsample_prop = subsample_prop,
-    num_runs = num_runs)
+    num_runs = num_runs,
+    cluster_method = cluster_method)
   
   return(data_info)}
 ```
@@ -490,13 +520,15 @@ crab_bake <- function(data_info){
                 min_k = params$min_k,
                 max_k = params$max_k,
                 subsample_prop = params$subsample_prop,
-                num_subsamples = params$num_subsamples)}
+                num_subsamples = params$num_subsamples,
+                cluster_method = params$cluster_method)}
   else{
     score <- crab(data = crab_data,
                 min_k = params$min_k,
                 max_k = params$max_k,
                 subsample_prop = params$subsample_prop,
-                num_subsamples = params$num_subsamples)}
+                num_subsamples = params$num_subsamples,
+                cluster_method = params$cluster_method)}
   
   return(score)}
 ```
