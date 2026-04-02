@@ -1,0 +1,1166 @@
+---
+format:
+  pdf:
+    documentclass: report
+    papersize: letter
+    fontsize: 12pt
+    mainfont: Times New Roman
+    geometry:
+      - left=1.5in
+      - right=1in
+      - top=1in
+      - bottom=1in
+    include-before-body:
+      - frontmatter/information.tex
+      - frontmatter/title-page.tex
+      - frontmatter/copyright-page.tex
+      - frontmatter/committee-page.tex
+      - frontmatter/abstract.tex
+      - frontmatter/acknowledgments.tex
+      - frontmatter/table-of-contents.tex
+    number-sections: true
+    citation-style: apa
+    bibliography: bibliography/example-bibliography.bib
+    csl: bibliography/apa-6th-edition.csl
+    include-in-header: frontmatter/formating.tex
+---
+
+```{r}
+#| lablel: set-up
+#| include: false # Use to hide code and results
+
+# hidden code chunk for libraries + data
+library(tidyverse)
+library(kableExtra)
+library(tidyclust)
+library(tidymodels)
+library(foreach)
+library(doParallel)
+library(MASS)
+
+doParallel::registerDoParallel(cores = detectCores() - 5)
+penguins_data <- penguins
+
+source("functions.R/functions.R")
+```
+
+# Introduction
+
+## Motivation
+Unsupervised learning is a type of machine learning where data is unlabeled 
+and the true target variable is unknown. It is commonly used to identify groups 
+of observations, reduce dimensionality, or detect anomalies within data. While 
+these methods can reveal meaningful structure in data, they are inherently difficult
+to evaluate because there is no ground truth to compare against, unlike in 
+supervised learning.
+
+A widely used approach within unsupervised learning is K-means, a type of clustering 
+algorithm. This algorithm initializes $k$ centroids in the data space and assigns
+each point to the nearest centroid based on Euclidean distance. The centroids are then 
+updated as the mean of their assigned points and this process is repeated 
+until the cluster assignments stabilize. Despite its simplicity, K-means has notable
+limitations. One flaw is the final clustering depends heavily on the initial placements
+of the centroids (Jaeger), which can lead to inconsistent or suboptimal results.
+Additionally, the use of Euclidean distance assumes that the clusters 
+themselves are roughly spherical, an assumption that often fails for real-world 
+data.
+
+A major challenge in clustering as a whole is determining the appropriate number 
+of clusters. Without prior knowledge, this choice can significantly affect the 
+outcome, and different methods often suggest different answers. Two of the most 
+commonly used techniques are the Elbow Method and the Silhouette Score.
+
+## Current Methods
+The Elbow Method is a visual approach that evaluates clustering by calculating the
+within-cluster sum of squares (WCSS). This measures the sum of squared Euclidean 
+distances between each point and its assigned cluster centroid for different 
+values of $k$. As the number of clusters increases, the WCSS naturally decreases 
+because smaller clusters reduce within-cluster variation. The optimal number of
+clusters is typically identified at the point where the decrease in WCSS slows 
+dramatically and begins to level off, forming what is known as the "elbow". The 
+value of $k$ just before this plateau is then chosen as the correct number of clusters.
+Although this method works well when the elbow is clearly visible, it does not always
+provide a clear answer (Kodinariya). 
+
+```{r}
+#| label: data-example1
+#| echo: false # Use to hide code but not results
+#| tbl-cap: "Data Example"
+#| include: false
+
+# set seed for recreation
+set.seed(590)
+
+# number of observations per cluster
+n <- 200
+
+# generate points from mvnorm disb'n
+sigma1 <- matrix(c(2.5, -2.3,
+                   -2.3, 2.75), nrow = 2)  # very elongated
+
+cluster1 <- mvrnorm(n, mu = c(1, 0), 
+                    Sigma = sigma1)
+
+# generate points from mvnorm disb'n
+sigma2 <- matrix(c(4, -2.5,
+                   -2.5, 2), nrow = 2)
+cluster2 <- mvrnorm(n, mu = c(1, -6), 
+                    Sigma = sigma2)
+
+# generate points from mvnorm disb'n
+sigma3 <- matrix(c(3.2, -3.3,
+                   -3.3, 3.5), nrow = 2)
+cluster3 <- mvrnorm(n, mu = c(1, 5), 
+                    Sigma = sigma3)
+
+# join points to create data frame
+df <- data.frame(
+  x = c(cluster1[,1], cluster2[,1], cluster3[,1]),
+  y = c(cluster1[,2], cluster2[,2], cluster3[,2]),
+  cluster = factor(rep(c("Cluster 1"),
+                       each = n)))
+
+df |>
+  ggplot(aes(x = x, y = y)) +
+  geom_point() +
+  theme_minimal() +
+  labs(x = "x",
+       y = "y",
+       title = "Data Examples 1")
+
+```
+
+
+```{r}
+#| label: elbow-method graph example
+#| echo: false # Use to hide code but not results
+#| fig-cap: "Elbow Method Graph using WCSS"
+
+# set seed for recreation
+set.seed(590)
+
+# grab x and y cols from data frame
+X <- as.matrix(df[, c("x", "y")])
+
+# get wcss
+wcss <- sapply(1:10, function(k) {
+  kmeans(X, centers = k, nstart = 25)$tot.withinss})
+
+# create data frame of wcss
+elbow_df <- data.frame(
+  k = 1:10,
+  wcss = wcss)
+
+# plot elbow method
+elbow_df |>
+  ggplot(aes(x = k, y = wcss)) +
+  geom_point() +
+  geom_line() +
+  theme_minimal() +
+  labs(title = "Elbow Method Graph Using Total WCSS",
+       x = "Number of Clusters (k)",
+       y = NULL) +
+  scale_x_continuous(breaks = 1:10)
+```
+Figure 1.1 illustrates a case where WCSS decreases gradually for all values of $k$, 
+making it difficult to identify a distinct elbow. Without a clear plateau to guide 
+the decision, selecting the optimal number of clusters becomes subjective and can 
+lead to very different results depending on the value of $k$ that is chosen.
+
+In contrast to the Elbow Method, the Silhouette Score provides a more quantitative
+approach by removing the subjectivity of visual interpretation. Instead of relying 
+on a plot, it judges clusters using a mathematical measure and selects the number of
+clusters based on the global maximum which corresponds to well separated and cohesive 
+clusters. However, this method introduces its own limitation due to the assumptions 
+it makes about cluster structure.
+
+The Silhouette Score is defined as:
+$$
+s(i) = \frac{b(i) - a(i)}{\max(a(i), b(i))}
+$$
+where $a(i)$ is the average distance between point $i$ and all other points in 
+the same cluster, and $b(i)$ is the average distance between point $i$ and points
+in the nearest neighboring cluster. 
+
+Intuitively, this measure evaluates how well a point fits within its assigned 
+cluster compared to others. Because of its formulation, the Silhouette Score 
+favors compact and well separated clusters. As a result, it performs well when 
+clusters are roughly uniform in shape, but struggles with oddly shaped or elongated 
+structures that real data tends to resemble. Additionally, maximizing the global 
+score can bias the method toward a solution with fewer clusters, prioritizing 
+separation over accurately capturing the underlying structure. This limitation is 
+illustrated in Figures 1.2 and 1.3.
+
+```{r}
+#| label: ss graph data
+#| echo: false # Use to hide code but not results
+#| fig-cap: "Silhouette Score Data"
+
+set.seed(590)
+n <- 200
+
+# cluster 1
+ss_sigma1 <- matrix(c(2.5, 2,
+                   2, 2.5), 
+                 nrow = 2)
+ss_cluster1 <- mvrnorm(n, mu = c(4, -10), 
+                    Sigma = ss_sigma1)
+
+# cluster 2
+ss_sigma2 <- matrix(c(3, 2.5,
+                   2.5, 3), 
+                 nrow = 2)
+ss_cluster2 <- mvrnorm(n, mu = c(10, 10), 
+                    Sigma = ss_sigma2)
+
+# cluster 1
+ss_sigma3 <- matrix(c(1.5, 1.3,
+                   1.3, 1.5), 
+                 nrow = 2)
+ss_cluster3 <- mvrnorm(n, mu = c(1.5, 12), 
+                    Sigma = ss_sigma3)
+
+# combine 
+ss_df <- data.frame(x = c(ss_cluster1[,1], ss_cluster2[,1], ss_cluster3[,1]),
+                    y = c(ss_cluster1[,2], ss_cluster2[,2], ss_cluster3[,2]))
+
+# Plot
+ss_df |>
+ggplot(aes(x = x, y = y)) +
+  geom_point() +
+  theme_minimal() +
+  labs(title = "")
+```
+
+```{r}
+#| label: ss graph example
+#| echo: false # Use to hide code but not results
+#| fig-cap: "Silhouette Score Graph"
+
+
+# k vals
+k_values <- 2:6
+
+# intialize ss
+sil_scores <- numeric(length(k_values))
+
+# euclidean distance
+d <- dist(df[, c("x", "y")])
+
+for (i in seq_along(k_values)) {
+  k <- k_values[i]
+  
+  # run kmeans
+  km <- kmeans(df[, c("x", "y")], centers = k, nstart = 25)
+  
+  # compute ss
+  sil <- cluster::silhouette(km$cluster, d)
+  
+  # avg silhouette score
+  sil_scores[i] <- mean(sil[, 3])}
+
+# put results in dataframe
+ss_results <- data.frame(k = k_values,
+                      silhouette = sil_scores)
+
+# plot
+ss_results |>
+  ggplot(aes(x = k, y = silhouette)) +
+  geom_line() +
+  geom_point() +
+  theme_minimal() +
+  labs(title = "Average Silhouette Score Across Number of Clusters",
+       x = "Number of Clusters (k)",
+       y = "")
+
+```
+Although the dataset visually contains three distinct clusters, the
+Silhouette Score identifies $k$ = 2 as the most optimal. This occurs 
+because the two upper clusters are relatively close to each other compared to the 
+lower cluster, leading the algorithm to favor greater separation over 
+correctly identifying all three groups. 
+
+## Previous Research
+These drawbacks have motivated alternative approaches that go beyond evaluating 
+clusters based solely on distance or compactness. One method introduced by
+Asa Ben-Hur and colleagues, evaluates clustering through stability. Their approach 
+stems from the idea that a clustering into $k$ groups captures the inherent structure 
+if similar cluster assignments are obtained across various subsamples of the data. 
+To assess this, the method repeatedly clusters subsets of the data using a hierarchical 
+clustering method and compares the consistency of assignments between observations 
+found in both subsets. Similarity between clusters is measured using cosine similarity, 
+producing a distribution of similarity scores for each value of $k$. When a true 
+underlying structure exists, these scores remain consistently high and concentrated 
+near 1, indicating that the clustering is stable across perturbations of the data.
+
+## cRab Score
+Building on this idea, the cRab algorithm evaluates clustering quality through 
+stability rather than relying on assumptions about cluster shape or separation. 
+By repeatedly subsampling and reclustering the data, it measures how consistent 
+cluster assignments of pairwise observations are across different samples. This 
+shifts the focus from how the clusters look visually to whether they are 
+reproducible, providing stronger evidence that the identified groupings are meaningful. 
+
+Unlike the Elbow Method and Silhouette Score, the cRab score makes no assumptions
+about the data or group structure, allowing it to better capture more complex and 
+irregular patterns. Additionally, the use of a global minimum provides a clear 
+and objective selection criterion, avoiding the ambiguity of visual interpretation 
+and the bias toward compact clusters. Although this approach may require additional 
+computation due to repeated sampling, it offers a more reliable way to determine 
+the number of clusters.
+
+The following chapters expand on this method. Chapter 2 provides a more detailed 
+mathematical explanation, while Chapter 3 introduces an R package with functions 
+that demonstrate the capabilities and applications of the cRab algorithm on both 
+real and simulated data.
+
+
+
+
+
+
+
+
+
+
+# Properties and Details
+## Overview
+The cRab algorithm, which stands for Clustering Rivals and Buddies, is designed 
+to evaluate clustering performance by examining how consistently points are 
+grouped together across multiple subsamples of the data. Unlike traditional 
+methods that rely on assumptions about cluster shape, size, or separation, cRab 
+emphasizes reproducibility, providing a more robust measure. At its core, cRab 
+focuses on pairwise relationships between observations. By tracking how often two 
+points end up in the same cluster across repeated resampling, the algorithm 
+quantifies the stability of cluster assignments. This approach allows it to handle 
+irregular clusters that would challenge methods such as the Elbow Method and
+Silhouette Score. The output is a single metric, the cRab score, which provides 
+a clear answer for selecting the most appropriate number of clusters while 
+minimizing subjectivity.
+
+## Preparing the Data
+At the start of the algorithm, missing observations are removed and the desired 
+features are standardized. Standardization ensures that variables with different 
+scales do not disproportionately influence the clustering outcome, which is 
+especially important for distance-based methods like K-means.
+
+The cRab algorithm requires three main inputs:
+
+- Subsample Proportion $f$: the fraction of the dataset included in each resample
+
+- Number of resamples $r$: how many times the data will be subsampled and clustered
+
+- Range of $k$ values: the different cluster counts to evaluate
+
+For each resample, a random subset of the data containing $f$ proportion of the 
+observations is drawn. K-means is then applied to assign cluster labels to each 
+point. By repeating this process across multiple resamples, the algorithm can 
+detect which cluster assignments are consistently reproduced, instead of placing 
+confidence on any single clustering of the full dataset.
+
+## Buddies Matrix
+After clustering each resample, a Buddies Matrix is constructed to track pairwise relationships between observations. This is an $n$ x $n$ matrix where the entry 
+$(i,j)$ encodes whether points $i$ and $j$ were assigned to the same cluster:
+
+- 1 if they are in the same cluster
+
+- -1 if they are in different clusters
+
+- 0 if one or both points are not included in the subsample
+
+To reduce computation and take advantage of symmetry, the diagonal and lower 
+triangle of the matrix are set to NA. Each resample produces one Buddies Matrix, 
+resulting in $r$ matrices in total. Collectively, these matrices capture the 
+variability of pairwise relationships across resamples, forming the foundation 
+for measuring clustering stability.
+
+For example, Figure 2.1 shows a random sample from a mock dataset clustered using 
+K-means. The five labeled points illustrate all possible scenarios where Observations 
+1 and 3 belong in different clusters, while Observations 4 and 5 are in the same 
+cluster. Observation 2, although part of the original dataset, was not included
+in this particular sample.
+
+```{r, out.width='80%', out.height='auto'}
+#| label: Buddies Matrix Data 
+#| echo: false # Use to hide code but not results
+#| fig-cap: "Buddies Matrix Data"
+knitr::include_graphics("../images/buddies_data.png")
+```
+
+Figure 2.2 shows how these pairwise relationships are represented in a Buddies
+Matrix.
+
+```{r, out.width='80%', out.height='auto'}
+#| label: Buddies Matrix Example 
+#| echo: false # Use to hide code but not results
+#| fig-cap: "Buddies Matrix Example"
+knitr::include_graphics("../images/buddies_matrix.png")
+```
+
+
+## Mean Matrix
+The Buddies Matrices are then aggregated to form the Mean Matrix, which summarizes 
+the overall stability of pairwise cluster assignments. For each entry $(i,j)$, 
+the algorithm first counts the number of resamples where both points were included. 
+It then sums the corresponding entries from the Buddies Matrices across those 
+resamples, and divides by the number of comparisons to obtain the mean. The resulting 
+entries are values between -1 and 1 that reflect how consistently the pair of 
+points is clustered together across resamples. Values closer to -1 suggest 
+that the points are often placed in different clusters, while values closer to 1 
+suggest that the points are frequently assigned to the same cluster. Entries near 
+0 indicate inconsistent or ambiguous pairwise assignments. The Mean Matrix acts 
+as a stability map, revealing which relationships are robust across different 
+subsamples of the data. Figure 2.3 is a visual diagram of how the Mean Matrix is 
+constructed using the Buddies Matrices.
+
+```{r, out.width='100%', out.height='auto'}
+#| label: Mean Matrix Example 
+#| echo: false # Use to hide code but not results
+#| fig-cap: "Mean Matrix Example"
+knitr::include_graphics("../images/mean_matrix.png")
+```
+
+
+## Similarity Score
+To summarize the information in the Mean Matrix, the cRab score is calculated. All
+entries of the matrix are vectorized, their absolute values are taken, and the 
+mean of the squared distances from 1 is computed. Scores close to 0 indicate that 
+points are consistently grouped together across all subsamples, suggesting highly
+reproducible clusters. In contrast, higher scores denote greater instability, 
+signaling that cluster assignments vary significantly depending on the subsample.
+This score condenses these various pairwise relationships into a single metric 
+that can be compared across different values of $k$.
+
+## cRab Performance
+By plotting the cRab scores across different values of $k$, the algorithm identifies 
+the most stable clustering as the one with the lowest score. This provides an 
+objective criterion for selecting the number of clusters. In many cases, the 
+optimal value appears as a “pinching point” in the plot, where the score decreases 
+before rising again for larger $k$ values. 
+
+To illustrate the performance of cRab, the well-known Palmer Penguins dataset 
+serves as an effective benchmark. This dataset is particularly useful because it 
+contains a true class label, species, allowing for direct comparison between 
+identified clusters and the actual groupings. There are three unique species along 
+with several physical measurements, such as bill length, bill depth, and flipper 
+length. For this analysis, flipper length and bill length are selected, as these 
+features provide strong separation between species with minimal overlap across observations.
+
+```{r}
+#| label: penguins data
+#| echo: false # Use to hide code but not results
+#| fig-cap: "Palmers Penguins Data"
+
+# drop na
+penguins <- palmerpenguins::penguins |>
+  drop_na()
+
+# plot
+penguins |>
+  ggplot(aes(x = bill_length_mm, y = flipper_length_mm, color = species)) +
+  geom_point() +
+  theme_minimal() +
+  labs(title = "Palmers Penguins Data",
+       subtitle = "Flipper Length (mm) vs. Bill Length (mm)",
+       x = "Bill Length (mm)",
+       y = "Flipper Length (mm)",
+       color = "Species")
+```
+
+```{r}
+#| include: false
+peng_example <- read_csv(here::here("peng_ex.csv"))
+```
+
+When applying the Elbow Method, the resulting plot in Figure 2.1 shows a gradual 
+decrease in WCSS rather than a distinct bend. As discussed previously, this makes 
+it difficult to clearly identify a clear optimal number of clusters, since there 
+is no obvious point where the reduction in error slows significantly. As a result, 
+the method provides little guidance and requires subjective interpretation.
+
+```{r}
+#| label: penguins elbow graph
+#| echo: false # Use to hide code but not results
+#| fig-cap: "Elbow Method on Palmers Penguins Data"
+# set seed for recreation
+set.seed(590)
+
+penguins_scaled <- penguins |>
+  dplyr::select(c(bill_length_mm, flipper_length_mm)) |>
+  drop_na() |>
+  scale() |>
+  as.data.frame()
+
+# grab x and y cols from data frame
+X <- as.matrix(penguins_scaled[, c("bill_length_mm", "flipper_length_mm")])
+
+# get wcss
+wcss <- sapply(1:10, function(k) {
+  kmeans(X, centers = k, nstart = 25)$tot.withinss})
+
+# create data frame of wcss
+elbow_dfp <- data.frame(
+  k = 1:10,
+  wcss = wcss)
+
+# plot elbow method
+elbow_dfp |>
+  ggplot(aes(x = k, y = wcss)) +
+  geom_point() +
+  geom_line() +
+  theme_minimal() +
+  labs(title = "Elbow Method Graph Using Total WCSS",
+       subtitle = "On Palmers Penguins Data",
+       x = "Number of Clusters (k)",
+       y = NULL) +
+  scale_x_continuous(breaks = 1:10)
+```
+
+The Silhouette Score, shown in Figure 2.2, suggests that two clusters are optimal, 
+as this value produces the highest average silhouette score. According to this metric, 
+the data is best partitioned into two groups. However, this result conflicts with 
+the known structure of the dataset, which contains three distinct species. This 
+discrepancy highlights the method’s tendency to favor solutions that maximize 
+separation.
+
+```{r}
+#| label: penguins ss graph
+#| echo: false # Use to hide code but not results
+#| fig-cap: "Silhouette Score on Palmers Penguins Data"
+# set seed for recreation
+set.seed(590)
+
+# k vals
+k_values <- 2:6
+
+# intialize ss
+sil_scores <- numeric(length(k_values))
+
+# euclidean distance
+d <- dist(penguins_scaled[, c("bill_length_mm", "flipper_length_mm")])
+
+for (i in seq_along(k_values)) {
+  k <- k_values[i]
+  
+  # run kmeans
+  km <- kmeans(penguins_scaled[, c("bill_length_mm", "flipper_length_mm")], 
+               centers = k, nstart = 25)
+  
+  # compute ss
+  sil <- cluster::silhouette(km$cluster, d)
+  
+  # avg silhouette score
+  sil_scores[i] <- mean(sil[, 3])}
+
+# put results in dataframe
+ss_results_p <- data.frame(k = k_values,
+                      silhouette = sil_scores)
+
+# plot
+ss_results_p |>
+  ggplot(aes(x = k, y = silhouette)) +
+  geom_line() +
+  geom_point() +
+  theme_minimal() +
+  geom_text(aes(label = round(silhouette, 3)), 
+            vjust = -0.9, hjust = 0.2) +
+  ylim(0.39, 0.57) +
+  xlim(2, 6.3) +
+  labs(title = "Average Silhouette Score Across Number of Clusters",
+       subtitle = "On Palmers Penguins",
+       x = "Number of Clusters (k)",
+       y = "")
+```
+
+In contrast, the cRab Score correctly identifies three clusters as the optimal 
+solution with a score of 0.0048. The next lowest score occurs at $k$ = 2, which 
+is consistent with the alternative methods. Although the “pinching point” is less 
+visually pronounced in this example, the local minimum at $k$ = 3 provides a clear 
+and objective indication of the suggested number of groupings. More importantly, 
+this result aligns with the known structure of the dataset, as defined by the 
+species label.
+
+```{r, out.width='80%', out.height='auto'}
+#| label: penguins crab output
+#| echo: false # Use to hide code but not results
+#| tbl-cap: "cRab Performance on Palmers Penguins Data Table"
+
+knitr::kable(peng_example) |>
+  kableExtra::kable_styling()
+```
+
+```{r}
+#| label: penguins crab graph
+#| echo: false # Use to hide code but not results
+#| fig-cap: "cRab Performance on Palmers Penguins Data Line Graph"
+
+peng_example |>
+  ggplot(aes(x = k, y = score)) +
+  geom_line() +
+  geom_point() +
+  labs(x = "Cluster Value (k)",
+       y = "",
+       title = "cRab Score Across Cluster k Values")
+```
+
+Chapter 4 goes more into depth through a series of simulations that demonstrate 
+cRab's performance across various datasets, highlighting its ability to identify 
+the true structure of the data. Boxplots and other visualizations are used to 
+illustrate how cRab performs.
+
+# Package
+
+NO documentation that looks like help page
++ discussion of functions and design choices
++ vignette style examples of inputs and outputs
+
+# Simulation Study
+test w non spherical data too
+
+## Non-Spherical Data
+
+```{r}
+#| eval: false
+#| label: example-table1
+#| echo: false # Use to hide code but not results
+#| tbl-cap: "Example Table Title/Caption"
+
+# set seed for recreation
+set.seed(590)
+
+# number of observations per cluster
+n <- 300
+
+# generate points from mvnorm disb'n
+sigma1 <- matrix(c(4, 3,
+                   3, 3), nrow = 2)
+cluster1 <- mvrnorm(n, 
+                    mu = c(0, 0), 
+                    Sigma = sigma1)
+
+# generate points from mvnorm disb'n
+sigma2 <- matrix(c(6, 0,
+                   0, 0.25), nrow = 2)
+cluster2 <- mvrnorm(n, 
+                    mu = c(6, 4), 
+                    Sigma = sigma2)
+
+# generate points from mvnorm disb'n
+sigma3 <- matrix(c(4, 1.5,
+                   1.5, 1), nrow = 2)
+cluster3 <- mvrnorm(n, mu = c(1, -3.5), 
+                    Sigma = sigma3)
+
+# join points to create data frame
+df <- data.frame(
+  x = c(cluster1[,1], cluster2[,1], cluster3[,1]),
+  y = c(cluster1[,2], cluster2[,2], cluster3[,2]),
+  cluster = factor(rep(c("Cluster 1", "Cluster 2", "Cluster 3"),
+                       each = n)))
+
+# applying crab
+df |>
+  crab_prep() |>
+  crab_cols(c("x", "y")) |>
+  crab_params(min_k = 2, max_k = 5, num_subsamples = 10, cluster_method = "kmeans") |>
+  crab_bake()
+
+```
+
+# Conclusion
+
++ restate and brag
++ #better than everybody else
++ future work
++ note that this was only used for k-means
+## Computational Details
+
+The results in this paper were obtained using `R` 4.4.1. `R` itself and all 
+packages used are available from the Comprehensive `R` Archive Network (CRAN) at 
+https://CRAN.R-project.org/.
+
+# REFERENCES {.unnumbered}
+
+::: {#refs}
+:::
+
+\appendix
+
+<!-- Store original definitions formatting -->
+\let\oldclearpage\clearpage
+\let\oldcleardoublepage\cleardoublepage
+
+<!-- Disable page breaks -->
+\let\clearpage\relax
+\let\cleardoublepage\relax
+
+# simulate_mvn()
+
+<!-- Restore original formatting -->
+\let\clearpage\oldclearpage
+\let\cleardoublepage\oldcleardoublepage
+
+```{r}
+#| label: simulate_mvn()
+simulate_mvn <- function(n = 100, 
+                         covariance = 0.4,
+                         desired_k = 3,
+                         start_seed = 123){
+  set.seed(start_seed)
+  
+  # creating covariance matrix
+  cov_matrix <- diag(2) * covariance
+  
+  # if desired k is wanted
+  if (!is.null(desired_k) && desired_k > 0)  {
+    
+    # obs per cluster
+    n_per_cluster <- ceiling(n / desired_k)
+    
+    # distance between each cluster center
+    separation <- 3
+    
+    # create grid coordinates for means
+    grid_coords <- expand.grid(
+      x = seq(0, 
+              by = separation,
+              length.out = ceiling(sqrt(desired_k))),
+      y = seq(0, 
+              by = separation, 
+              length.out = ceiling(sqrt(desired_k))))
+    
+    # pick first k grid points
+    centers <- grid_coords[1:desired_k, ]
+    
+    # generate data
+    data <- do.call(rbind, lapply(1:desired_k, function(k){
+      
+      # determine mean
+      mu <- c(centers$x[k], centers$y[k])
+      
+      # generate clusters
+      MASS::mvrnorm(n = n_per_cluster,
+                    mu = mu,
+                    Sigma = cov_matrix)}))
+  
+  # if no desired kvalue
+  }else{
+    # mu
+    mu <- c(0, 0)
+    
+    # data
+    data <- MASS::mvrnorm(n = n,
+                         mu = mu,
+                         Sigma = cov_matrix)}
+  
+  # change to dataframe
+  data <- as.data.frame(data)
+  
+  # standardize
+  data <- data |>
+  dplyr::mutate(across(c(V1, V2), ~ (. - mean(.)) / sd(.)))
+  
+  # change col names
+  colnames(data) <- c("V1", "V2")
+  
+  return(data)}
+```
+
+# buddies_matrix()
+
+```{r}
+#| label: buddies_matrix()
+buddies_matrix <- function(data = data, 
+                           k = 3,
+                           subsample_prop = 0.8, 
+                           num_subsamples = 10,
+                           start_seed = 123){
+  
+  # drop na
+  data <- data |>
+    drop_na() |>
+    scale() |>
+    as.data.frame()
+  
+  # add index
+  data$index <- 1:nrow(data)
+  
+  # initialize results list
+  results <- list()
+
+  # holds matrix for each subsample in each k
+  results <- foreach(i = 1:num_subsamples,
+                     .packages = c("tidyclust", 
+                                   "tidyverse", 
+                                   "tidymodels")) %dopar% {
+
+                       # initalizing blank matrix              
+                       result_matrix <- matrix(0, 
+                                               nrow = nrow(data),
+                                               ncol = nrow(data))
+                       
+                       # seed
+                       set.seed(start_seed + i)
+                     
+                       # resample
+                       random_sample <- data |>
+                         filter(index %in% sample(
+                           index, 
+                           subsample_prop * nrow(data))) 
+                       
+                       # kmeans
+                       kmodel <- k_means(num_clusters = k) |>
+                         fit(~ random_sample[[1]] + 
+                               random_sample[[2]],
+                             data = random_sample)
+
+                       # assign points to cluster
+                       intermediate <- data.frame(
+                         random_sample$index,
+                         extract_cluster_assignment(kmodel) |>
+                           mutate(.cluster = as.character(.cluster)),
+                         stringsAsFactors = FALSE)
+                       
+                       # rename columns
+                       colnames(intermediate) <- c("index", "cluster")
+                
+                      # assign results matrix (-1, 1, 0)
+                      for (c in unique(intermediate$cluster)){
+                        idx <- intermediate[intermediate$cluster == c, 
+                                            ]$index
+                        
+                        if (length(idx) > 1){
+                          idx <- sort(unlist(idx), method = "radix")
+                          ones <- t(combn(idx, 2))
+                          result_matrix[ones[, 1], ones[, 2]] <- 1}
+                        
+                        neg_one_idx <- expand.grid(
+                          idx,
+                          setdiff(random_sample$index, idx))
+                        
+                        result_matrix[neg_one_idx[, 1], 
+                                      neg_one_idx[, 2]] <- -1}
+                       
+                      # set lower triangle and diagonal to NA
+                      result_matrix[lower.tri(result_matrix, 
+                                              diag = TRUE)] <- NA
+                      return(result_matrix)}
+
+  # return results
+  return(results)}
+```
+
+# mean_matrix()
+
+```{r}
+#| label: mean_matrix()
+mean_matrix <- function(data = data,
+                          k = 3,
+                          subsample_prop = 0.8,
+                          num_subsamples = 10,
+                          start_seed = 123){
+  
+  # call simulate_cluster() function
+  results <- buddies_matrix(data, 
+                              k = k,
+                              subsample_prop = subsample_prop, 
+                              num_subsamples = num_subsamples,
+                              start_seed = start_seed)
+  
+  # abs value the entire matrix for all matrices
+  absolute_sum <- lapply(results, abs)
+  
+  # get sum of abs value in final matrix
+  absolute_final <- absolute_sum |>
+    reduce(`+`)
+  
+  # get sum of values in final matrix
+  numerator <- results |>
+    reduce(`+`)
+  
+  return(list(matrices = results, score = numerator/absolute_final))}
+```
+
+# similarity_score()
+
+```{r}
+#| label: similarity_score()
+similarity_score <- function(mean_matrix = mean_matrix){
+  
+  # get score matrix
+  mean_matrix_score <- mean_matrix$score 
+  
+  # transforms into vector
+  result_vector <- as.vector(mean_matrix_score)
+  
+  # keeps only non NA values
+  result_vector <- abs(result_vector[!is.na(result_vector)])
+  
+  # finds squared distance from one
+  return(sum((1 - result_vector)**2))}
+```
+
+# crab()
+
+```{r}
+#| label: crab()
+crab <- function(data,
+                  n = 100, 
+                  min_k = 2,
+                  max_k = 5,
+                  subsample_prop = 0.8, 
+                  num_subsamples = 10,
+                  start_seed = 123){
+  
+  # intialize score list
+  k_scores <- data.frame(k = numeric(),
+                         score = numeric(),
+                         time = numeric(),
+                         best_clust = character())
+  
+  # iterate over k values
+  for (k in min_k:max_k){
+      # start time
+      tictoc::tic()
+    
+      # get buddies matrices and overall mean matrix
+      mean_matrix <- mean_matrix(data = data, 
+                                 k = k, 
+                                 subsample_prop = subsample_prop, 
+                                 num_subsamples = num_subsamples, 
+                                 start_seed = start_seed)
+      
+      # store all scores
+      score <- similarity_score(mean_matrix = mean_matrix)
+      
+      # end time
+      time_info <- tictoc::toc(quiet = TRUE)
+      
+      # calculate execution time
+      elapsed_time <- time_info$toc - time_info$tic
+      
+      # add to results
+      k_scores <- rbind(k_scores,
+                        data.frame(k = k,
+                                   score = score,
+                                   time = elapsed_time,
+                                   best_clust = ""))}
+      
+  # find row with lowest score 
+  best_score_idx <- which.min(k_scores$score)
+  k_scores$best_clust[best_score_idx] <- "BEST"
+  
+  # get similarity score
+  return(k_scores)}
+```
+
+# repeat_simulations()
+
+```{r}
+#| label: repeat_simulations()
+repeat_simulations <- function(crab_setup = NULL,
+                               data = NULL,
+                               num_runs,
+                               n = 100,
+                               covariance, 
+                               desired_k = 3, 
+                               min_k,
+                               max_k,
+                               subsample_prop = 0.8, 
+                               num_subsamples,
+                               start_seed = 123) {
+  
+  if (!is.null(crab_setup)){
+    # assign data
+    sim_data <- crab_setup$data
+    
+    # check params
+    if (is.null(crab_setup$specified_params)){
+      stop("Error: You have not specified your parameters. 
+           Call crab_sim_params() first.")}
+    
+    # assign params
+    params <- crab_setup$specified_params
+    num_runs = params$num_runs
+    n = params$n
+    min_k = params$min_k
+    max_k = params$max_k
+    subsample_prop = params$subsample_prop
+    num_subsamples = params$num_subsamples
+    
+     if(!is.null(params$covariance)){
+      covariance = params$covariance
+      desired_k = params$desired_k}}
+  
+  # initialize results list
+  results_list <- list()
+  
+  # create counter
+  counter <- 1
+  
+  # loop through covariances
+  for (cov in covariance) {
+     # simulate data
+      if (is.null(data)) {
+          sim_data <- simulate_mvn(n = n,
+                         covariance = cov, 
+                         desired_k = desired_k)}
+    
+    # loop through number of runs/reps
+    for (i in seq_len(num_runs)) {
+      # alternate seed
+      current_seed <- start_seed + i
+      
+      # call crab()
+      sim_result <- crab(data = sim_data,
+                         start_seed = current_seed,
+                         n = n,
+                         min_k = min_k,
+                         max_k = max_k,
+                         subsample_prop = subsample_prop, 
+                         num_subsamples = num_subsamples)
+      
+      # add rep identifier
+      sim_result$run <- i
+      
+      # add covariance identifier
+      sim_result$cov <- cov
+      
+      # store result
+      results_list[[counter]] <- sim_result
+      
+      # increase counter
+      counter <- counter + 1}}
+  
+  # combine all results
+  all_results <- do.call(rbind, results_list)
+  return(all_results)}
+```
+
+# crab_prep()
+```{r}
+crab_prep <- function(data){
+  # grab all columns, leave user choices NULL
+  data_info <- list(data = data, 
+                    original_cols = colnames(data),
+                    specified_cols = NULL,
+                    specified_params = NULL)
+  
+  return(data_info)}
+```
+
+# crab_cols()
+```{r}
+crab_cols <- function(data_info, chosen_cols){
+  # check if chosen columns exist
+  missing_cols <- setdiff(chosen_cols, data_info$original_cols)
+  
+  # leave error message if columns dont exist
+  if (length(missing_cols) > 0) {
+    stop("Column(s) do not exist: ",
+         paste(missing_cols, collapse = ", "))}
+  
+  # update specified cols
+  data_info$specified_cols <- chosen_cols
+  
+  return(data_info)}
+```
+
+
+# crab_params()
+```{r}
+crab_params <- function(data_info, min_k, max_k, num_subsamples, 
+                        subsample_prop = 0.8){
+  # check min_k and max_k
+  if (min_k > max_k){
+    stop("Error: min_k must be <= max_k.")}
+    
+  # check subsample prop
+  if (subsample_prop >= 1){
+    stop("Error: subsample_prop must be < 1.")}
+  
+  # update specified params
+  data_info$specified_params <- list(
+    min_k = min_k,
+    max_k = max_k,
+    num_subsamples = num_subsamples,
+    subsample_prop = subsample_prop)
+  
+  return(data_info)}
+```
+
+# crab_sim_params()
+```{r}
+crab_sim_params <- function(data_info, min_k, max_k, num_subsamples, 
+                            n = 100, covariance, desired_k = 3, 
+                            subsample_prop = 0.8, num_runs){
+  # check min_k and max_k
+  if (min_k > max_k){
+    stop("Error: min_k must be <= max_k.")}
+    
+  if (min_k < 0){
+    stop("Error: min_k must be > 0.")}
+  
+  if (max_k < 0){
+    stop("Error: max_k must be > 0.")}
+  
+  # check subsample prop
+  if (subsample_prop >= 1){
+    stop("Error: subsample_prop must be < 1.")}
+  
+  # check num_runs
+  if (num_runs < 0){
+    stop("Error: num_runs must be > 0.")}
+  
+  # update specified params
+  data_info$specified_params <- list(
+    min_k = min_k,
+    max_k = max_k,
+    num_subsamples = num_subsamples,
+    n = n,
+    covariance = covariance,
+    desired_k = desired_k,
+    subsample_prop = subsample_prop,
+    num_runs = num_runs)
+  
+  return(data_info)}
+```
+
+
+# crab_bake()
+```{r}
+crab_bake <- function(data_info){
+  # check cols are chosen
+  if (is.null(data_info$specified_cols)){
+    stop("No columns have been specified. Call crab_cols() first.")}
+  
+  # check params are chosen
+  if (is.null(data_info$specified_params)){
+    stop("No parameters have been specified. Call crab_params() first.")}
+
+  # grab data with chosen cols
+  crab_data <- data_info$data[, data_info$specified_cols, drop = FALSE]
+  
+  # grab params
+  params <- data_info$specified_params
+  
+  if(!is.null(params$covariance)){
+  # call crabs 
+  score <- crab(data = crab_data,
+                n = params$n,
+                covariance = params$covariance,
+                desired_k = params$desired_k,
+                min_k = params$min_k,
+                max_k = params$max_k,
+                subsample_prop = params$subsample_prop,
+                num_subsamples = params$num_subsamples)}
+  else{
+    score <- crab(data = crab_data,
+                min_k = params$min_k,
+                max_k = params$max_k,
+                subsample_prop = params$subsample_prop,
+                num_subsamples = params$num_subsamples)}
+  
+  return(score)}
+```
+

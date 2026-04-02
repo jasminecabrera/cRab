@@ -178,10 +178,10 @@ buddies_matrix <- function(data = data,
 
 ```{r}
 mean_matrix <- function(data = data,
-                          k = 3,
-                          subsample_prop = 0.8,
-                          num_subsamples = 10,
-                          start_seed = 123,
+                        k = 3,
+                        subsample_prop = 0.8,
+                        num_subsamples = 10,
+                        start_seed = 123,
                         cluster_method){
   
   # call simulate_cluster() function
@@ -223,7 +223,7 @@ similarity_score <- function(mean_matrix = mean_matrix){
   result_vector <- abs(result_vector[!is.na(result_vector)])
   
   # finds squared distance from one
-  return(sum((1 - result_vector)**2))}
+  return(mean((1 - result_vector)**2))}
 ```
 
 ------------------------------------------------------------------------
@@ -531,4 +531,47 @@ crab_bake <- function(data_info){
                 cluster_method = params$cluster_method)}
   
   return(score)}
+```
+
+------------------------------------------------------------------------
+
+### getPointVecHelper
+
+```{r}
+getPointVecHelper <- function(i, mean_matrix) {
+  # grab i row and col, without diagonal
+  row <- mean_matrix[i, -i]
+  col <- mean_matrix[-i, i]
+  
+  # grab all abs vals of i, removing NAs
+  res_vec <- c(row, col)
+  res_vec <- abs(res_vec[!is.na(res_vec)])
+  return(res_vec)}
+```
+
+### point_contribution()
+
+```{r}
+point_contribution <- function(data, mean_matrix) {
+  # loop through every point
+  scores <- lapply(c(1:nrow(data)), function(i) {
+    
+    # abs vals of i
+    full_vec <- getPointVecHelper(i, mean_matrix)
+    
+    # computer score
+    singlePointScore <- mean((1 - full_vec)^2)
+    return(list(index = i, singlePointScore = singlePointScore))})
+  
+  # create data frame
+  final_df <- do.call(rbind.data.frame, scores)
+  
+  # mean score
+  total_score <- mean(final_df$singlePointScore)
+
+  # point contribution
+  final_df <- final_df |>
+    mutate(singlePointContribution = singlePointScore / total_score)
+  
+  return(final_df)}
 ```
