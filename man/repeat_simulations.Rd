@@ -9,54 +9,44 @@ repeat_simulations(
   data = NULL,
   num_runs,
   n = 100,
-  covariance,
+  variance,
   desired_k = 3,
   min_k,
   max_k,
   subsample_prop = 0.8,
   num_subsamples,
-  cluster_method,
-  start_seed = 123
+  start_seed = 123,
+  cluster_method
 )
 }
 \arguments{
 \item{crab_setup}{a list containing the dataset, the original column names, and placeholder
 NULL values for user-specified columns and parameters; the output from crab_prep()}
 
-\item{data}{the simulated dataset to be analyzed
-
- Note: if not used, simulate_mvn() will be called}
+\item{data}{The simulated dataset to be analyzed. Note: if not used, simulate_mvn() will
+be called.}
 
 \item{num_runs}{Number of iterations}
 
-\item{n}{Number of observations to generate
+\item{n}{Number of observations to generate. Defaults to 100. Note: If n does not split
+evenly by desired_k, it will be rounded up.}
 
-Note: If n does not split evenly by desired_k, it will be rounded up
-
-Defaults to 100}
-
-\item{covariance}{List of variance values or single value used to construct the covariance
-matrix for the dataset}
-
-\item{desired_k}{The specific number of clusters (k) to evaluate
-
-Defaults to 3}
+\item{desired_k}{The specific number of clusters (k) to evaluate. Defaults to 3.}
 
 \item{min_k}{The starting number of clusters (k) for evaluation}
 
 \item{max_k}{The starting number of clusters (k) for evaluation}
 
-\item{subsample_prop}{Proportion of the dataset to use for each resample
-
-Defaults to 0.8}
+\item{subsample_prop}{Proportion of the dataset to use for each resample. Defaults to 0.8.}
 
 \item{num_subsamples}{Number of resamples to generate}
 
+\item{start_seed}{Random seed for reproducibility. Defaults to 123.}
+
 \item{cluster_method}{Specified clustering algorithm}
 
-\item{start_seed}{Random seed for reproducibility
-
-Defaults to 123}
+\item{covariance}{List of variance values or single value used to construct the covariance
+matrix for the dataset}
 }
 \value{
 A data frame where each row corresponds to a tested combination of k cluster,
@@ -69,7 +59,7 @@ combination within its own replication, where it is marked as "BEST".
 Runs crab() repeatedly for a specified number of iterations, defined by num_runs.
 }
 \examples{
-repeat_simulations(n = 100, num_runs = 5, covariance = c(0.1, 0.2),
+repeat_simulations(n = 100, num_runs = 5, variance = c(0.1, 0.2),
                    min_k = 2, max_k = 4, num_subsamples = 10,
                    cluster_method = "kmeans")
 }

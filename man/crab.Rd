@@ -18,33 +18,20 @@ crab(
 \arguments{
 \item{data}{The dataset to be analyzed}
 
-\item{n}{Number of observations to generate
+\item{n}{Number of observations to generate. Defaults to 100. Note: If n does not
+split evenly by desired_k, it will be rounded up}
 
-Note: If n does not split evenly by desired_k, it will be rounded up
+\item{min_k}{The starting number of clusters (k) for evaluation. Defaults to 2.}
 
-Defaults to 100}
+\item{max_k}{The ending number of clusters (k) for evaluation. Defaults to 5.}
 
-\item{min_k}{The starting number of clusters (k) for evaluation
+\item{subsample_prop}{Proportion of the dataset to use for each resample. Defaults to 0.8.}
 
-Defaults to 2}
+\item{num_subsamples}{Number of resamples to generate. Defaults to 10.}
 
-\item{max_k}{The ending number of clusters (k) for evaluation
+\item{start_seed}{Random seed for reproducibility. Defaults to 123.}
 
-Defaults to 5}
-
-\item{subsample_prop}{Proportion of the dataset to use for each resample
-
-Defaults to 0.8}
-
-\item{num_subsamples}{Number of resamples to generate
-
-Defaults to 10}
-
-\item{start_seed}{Random seed for reproducibility
-
-Defaults to 123}
-
-\item{cluster_method}{Specified clustering algorithm}
+\item{cluster_method}{Specified clustering algorithm (i.e. "kmeans")}
 }
 \value{
 A data frame where each row corresponds to a tested k cluster. The data frame
@@ -54,7 +41,7 @@ is marked as "BEST".
 }
 \description{
 Computes cluster score for clusters using k-Means to determine the optimal
-number of clusters
+number of clusters.
 }
 \examples{
 data <- simulate_mvn(n = 10)

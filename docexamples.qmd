@@ -4,9 +4,11 @@ format: html
 editor: visual
 ---
 
-## Original Data
+```{r}
+source("thesis_draft/functions.R/functions.R")
+```
 
--   
+## Original Data
 
 ```{r}
 # library and seed
@@ -141,7 +143,7 @@ ggplot(df_scaled) +
 ```{r}
 # data
 df_mm <- df |>
-  select(-cluster)
+  dplyr::select(-cluster)
 
 # mean matrix
 mean_matrix1 <- mean_matrix(data = df_mm,
@@ -152,7 +154,7 @@ mean_matrix1 <- mean_matrix(data = df_mm,
 
 # get contributions
 contributions <- point_contribution(data = df_mm, 
-                                    mean_matrix = mean_matrix1$score)
+                                    mean_matrix = mean_matrix1)
 
 # plot data
 ggplot(df_scaled, aes(x = x, y = y, color = contributions$singlePointContribution)) +
@@ -167,10 +169,10 @@ ggplot(df_scaled, aes(x = x, y = y, color = contributions$singlePointContributio
 
 ```{r}
 # simulate mvn data
-mvn_df <- simulate_mvn(n = 400, covariance = 0.4, desired_k = 3)
+mvn_df <- simulate_mvn(n = 400, variance = 0.4, desired_k = 3)
 
 # plot
-ggplot(mvn_df, aes(x = V1, y = V2)) +
+ggplot(mvn_df, aes(x = X1, y = X2)) +
   geom_point() +
   theme_minimal() +
   labs(x = "x",
@@ -184,11 +186,11 @@ km1 <- kmeans(mvn_df, centers = 3, nstart = 1)
 
 # plot
 ggplot(mvn_df) +
-  geom_point(aes(x = V1, 
-                 y = V2, 
+  geom_point(aes(x = X1, 
+                 y = X2, 
                  color = factor(km1$cluster))) +
   geom_point(data = data.frame(km1$centers), 
-             aes(x = V1, y = V2), size = 2) +
+             aes(x = X1, y = X2), size = 2) +
   theme_minimal() +
   labs(title = "kMeans Cluster Assignments",
        color = "Cluster Assignment")
@@ -204,10 +206,10 @@ mean_matrix_mvn <- mean_matrix(data = mvn_df,
 
 # get contributions
 mvn_contributions <- point_contribution(data = mvn_df, 
-                                         mean_matrix = mean_matrix_mvn$score)
+                                         mean_matrix = mean_matrix_mvn)
 
 # plot data
-ggplot(mvn_df, aes(x = V1, y = V2, 
+ggplot(mvn_df, aes(x = X1, y = X2, 
                    color = mvn_contributions$singlePointContribution)) +
   scale_color_gradient(low = "darkblue", high = "red") +
   geom_point() +
@@ -218,7 +220,7 @@ ggplot(mvn_df, aes(x = V1, y = V2,
 
 ```{r}
 # grab x and y cols from data frame
-X <- as.matrix(mvn_df[, c("V1", "V2")])
+X <- as.matrix(mvn_df[, c("X1", "X2")])
 
 # get wcss
 wcss_mvn <- sapply(1:10, function(k) {
@@ -242,6 +244,7 @@ elbow_mvn_df |>
 ```
 
 # Penguins Data
+
 ```{r}
 set.seed(590)
 
@@ -250,13 +253,6 @@ penguins <- palmerpenguins::penguins |>
   drop_na()
 
 # crab
-penguins |>
-  crab_cols(c("bill_length_mm", "flipper_length_mm")) |>
-  crab_params(min_k = 2, max_k = 6, 
-              num_subsamples = 15, subsample_prop = 0.85,
-              cluster_method = "kmeans") |>
-  crab_bake()
-
 peng_ex <- penguins |>
   crab_prep() |>
   crab_cols(c("flipper_length_mm", "bill_length_mm")) |>
@@ -264,6 +260,12 @@ peng_ex <- penguins |>
               num_subsamples = 100, cluster_method = "kmeans") |>
   crab_bake()
 
-write.csv(peng_ex, "peng_ex.csv", row.names = FALSE)
-```
+peng_ex |>
+  gt::gt()
 
+readr::write_csv(peng_ex, "peng_ex.csv")
+write.csv(peng_ex, "peng_ex.csv", row.names = FALSE)
+peng_example <- read_csv(here::here("peng_ex.csv"), na = character())
+peng_example |>
+  gt::gt()
+```

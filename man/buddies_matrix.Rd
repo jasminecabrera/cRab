@@ -16,23 +16,15 @@ buddies_matrix(
 \arguments{
 \item{data}{The dataset to be analyzed}
 
-\item{k}{The specific number of clusters (k) to evaluate
+\item{k}{The specific number of clusters (k) to evaluate. Defaults to 3.}
 
-Defaults to 3}
+\item{subsample_prop}{Proportion of the dataset to use for each resample. Defaults to 0.8.}
 
-\item{subsample_prop}{Proportion of the dataset to use for each resample
+\item{num_subsamples}{Number of resamples to generate. Defaults to 10.}
 
-Defaults to 0.8}
+\item{start_seed}{Random seed for reproducibility. Defaults to 123.}
 
-\item{num_subsamples}{Number of resamples to generate
-
-Defaults to 10}
-
-\item{start_seed}{Random seed for reproducibility
-
-Defaults to 123}
-
-\item{cluster_method}{Specified clustering algorithm}
+\item{cluster_method}{Specified clustering algorithm (i.e. "kmeans")}
 }
 \value{
 Produces a list of matrices, where the number of matrices
@@ -40,10 +32,10 @@ corresponds to num_subsamples.
 }
 \description{
 Generates buddies matrix for each resample corresponding to a specified k.
-The number of matrices produces is equivalent to the number of subsamples.
-In these matrices, rivals are assigned a value of -1 and buddies are assigned
-a value of 1. Rivals belong to different clusters, while buddies belong to
-the same cluster. The function applies the k-means algorithm via the k_means()
+The number of matrices produces is equivalent to the number of subsamples. In
+these matrices, rivals are assigned a value of -1 and buddies are assigned a
+value of 1. Rivals belong to different clusters, while buddies belong to the
+same cluster. The function applies the k-means algorithm via the k_means()
 function.
 }
 \examples{

@@ -10,7 +10,7 @@ crab_sim_params(
   max_k,
   num_subsamples,
   n = 100,
-  covariance,
+  variance,
   desired_k = 3,
   subsample_prop = 0.8,
   num_runs,
@@ -27,26 +27,19 @@ NULL values for user-specified columns and parameters; the output from crab_prep
 
 \item{num_subsamples}{Number of resamples to generate}
 
-\item{n}{Number of observations to generate
+\item{n}{Number of observations to generate. Defaults to 100. Note: If n does not split
+evenly by desired_k, it will be rounded up}
 
-Note: If n does not split evenly by desired_k, it will be rounded up
+\item{desired_k}{The specific number of clusters (k) to evaluate. Defaults to 3.}
 
-Defaults to 100}
-
-\item{covariance}{List of variance values or single value used to construct the covariance
-matrix for the dataset}
-
-\item{desired_k}{The specific number of clusters (k) to evaluate
-
-Defaults to 3}
-
-\item{subsample_prop}{Proportion of the dataset to use for each resample
-
-Defaults to 0.8}
+\item{subsample_prop}{Proportion of the dataset to use for each resample. Defaults to 0.8.}
 
 \item{num_runs}{Number of iterations}
 
-\item{cluster_method}{Specified clustering algorithm}
+\item{cluster_method}{Specified clustering algorithm (i.e. "kmeans")}
+
+\item{covariance}{List of variance values or single value used to construct the covariance
+matrix for the dataset}
 }
 \value{
 An updated list containing the data, its original column names, NULL for
@@ -65,7 +58,7 @@ simulated_data <- simulate_mvn(n = 10)
 crab_setup1 <- simulated_data |>
                crab_prep() |>
                crab_sim_params(min_k = 2, max_k = 3, num_subsamples = 10,
-                               num_runs = 2, covariance = 0.3,
+                               num_runs = 2, variance = 0.3,
                                cluster_method = "kmeans")
 crab_setup1
 }

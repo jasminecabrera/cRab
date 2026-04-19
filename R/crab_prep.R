@@ -19,10 +19,16 @@
 
 
 crab_prep <- function(data){
+
+  ### INPUT CHECKS:
+  if (!is.data.frame(data)) {
+    stop("Data must be in a dataframe.")}
+
+  ### FUNCTION:
   # grab all columns, leave user choices NULL
   data_info <- list(data = data,
                     original_cols = colnames(data),
                     specified_cols = NULL,
-                    specified_params = NULL)
+                    specified_params = list())
 
   return(data_info)}

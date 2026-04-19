@@ -4,31 +4,22 @@
 \alias{simulate_mvn}
 \title{Simulate Data from a Multivariate Normal Distribution}
 \usage{
-simulate_mvn(n = 100, covariance = 0.4, desired_k = 3, start_seed = 123)
+simulate_mvn(n = 100, variance = 0.4, desired_k = 3, start_seed = 123)
 }
 \arguments{
-\item{n}{Number of observations to generate.
+\item{n}{Number of observations to generate. Defaults to 100. Note: If n does
+not split evenly by desired_k(), it will be rounded up.}
 
-         Note: If n does not split evenly
-         by desired_k(), it will be rounded up.
+\item{variance}{Variance value used to construct the covariance matrix.
+Defaults to 0.7}
 
-         Defaults to 100}
+\item{desired_k}{Desired number of clusters k. Defaults to 3.}
 
-\item{covariance}{Variance value used to construct the covariance matrix
-
-         Defaults to 0.7}
-
-\item{desired_k}{Desired number of clusters k
-
-         Defaults to 3}
-
-\item{start_seed}{Random seed for reproducibility
-
-         Defaults to 123}
+\item{start_seed}{Random seed for reproducibility. Defaults to 123.}
 }
 \value{
 n x 2 standardized list with columns V1 and V2. Standardization is
-         performed within the function.
+performed within the function.
 }
 \description{
 Generates a simulated dataset from a multivariate normal (MVN) distribution

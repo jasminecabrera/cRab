@@ -10,27 +10,19 @@ mean_matrix(
   subsample_prop = 0.8,
   num_subsamples = 10,
   start_seed = 123,
-  cluster_method = "kmeans"
+  cluster_method
 )
 }
 \arguments{
 \item{data}{The dataset to be analyzed}
 
-\item{k}{The specific number of clusters (k) to evaluate
+\item{k}{The specific number of clusters (k) to evaluate. Defaults to 3.}
 
-Defaults to 3.}
+\item{subsample_prop}{Proportion of the dataset to use for each subsample. Defaults to 0.8.}
 
-\item{subsample_prop}{Proportion of the dataset to use for each subsample
+\item{num_subsamples}{Number of subsamples to generate. Defaults to 10.}
 
-Defaults to 0.8}
-
-\item{num_subsamples}{Number of subsamples to generate
-
-Defaults to 10}
-
-\item{start_seed}{Random seed for reproducibility
-
-Defaults to 123}
+\item{start_seed}{Random seed for reproducibility. Defaults to 123.}
 
 \item{cluster_method}{Specified clustering algorithm}
 }

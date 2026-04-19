@@ -78,7 +78,7 @@ data |>
 
     -   *Default*: 123
 
--   cluster_method *(string):* specified clustering algorithm
+-   cluster_method *(string):* specified clustering algorithm (i.e. "kmeans")
 
 **Output:** Produces a list of matrices, where the number of matrices corresponds to *num_subsamples*.
 
@@ -193,7 +193,7 @@ similarity_score(mean_matrix_test)
 
 ### crab()
 
-**Purpose:** Computes cluster score for clusters using k-Means to determine the optimal number of clusters
+**Purpose:** Computes cluster score for clusters using k-Means to determine the optimal number of clusters.
 
 **Parameters:**
 
@@ -574,7 +574,7 @@ pointvec
 -   data *(list)*: the dataset to be analyzed
 -   mean_matrix *(list)*: the output list produced by mean_matrix()
 
-**Output:** Generates a data frame containing the index, individual point score, and individual point contribution score for each data point with respect to the CRAB score. Higher contribution values increase the CRAB score, while negative values or values near zero have minimal impact.
+**Output:** Generates a data frame containing the index, individual point score, and individual point contribution score for each data point with respect to the CRAB score. Higher contribution values increase the CRAB score, while values near zero have minimal impact.
 
 **Example Code:**
 

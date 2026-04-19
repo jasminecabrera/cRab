@@ -24,6 +24,30 @@
 #' crab_bake()
 
 crab_bake <- function(data_info){
+
+  ### INPUT CHECKS:
+  # check if data_info is a list
+  if (!is.list(data_info)) {
+    stop("Input must be a list (output from crab_prep function).")}
+
+  # correct element names
+  required_names <- c("data", "original_cols", "specified_cols", "specified_params")
+  if (!all(required_names %in% names(data_info))) {
+    stop("Input list is missing at least one of the following: 'data', 'original_cols',
+         'specified_cols', 'specified_params.' Did you provide the correct object?")}
+
+  # check data is a dataframe
+  if (!is.data.frame(data_info$data)) {
+    stop("The 'data' element must be a dataframe.")}
+
+  # check original_cols is a list
+  if (!is.character(data_info$original_cols)) {
+    stop("original_cols must be a character vector of column names.")}
+
+  # check specified_params is a list
+  if (!is.list(data_info$specified_params)) {
+    stop("The 'specified_params' element must be a list.")}
+
   # check cols are chosen
   if (is.null(data_info$specified_cols)){
     stop("No columns have been specified. Call crab_cols() first.")}
@@ -32,29 +56,19 @@ crab_bake <- function(data_info){
   if (is.null(data_info$specified_params)){
     stop("No parameters have been specified. Call crab_params() first.")}
 
+  ### FUNCTION:
   # grab data with chosen cols
   crab_data <- data_info$data[, data_info$specified_cols, drop = FALSE]
 
   # grab params
   params <- data_info$specified_params
 
-  if(!is.null(params$covariance)){
-    # call crabs
-    score <- crab(data = crab_data,
-                  n = params$n,
-                  covariance = params$covariance,
-                  desired_k = params$desired_k,
+  # call crab()
+  score <- crab(data = crab_data,
                   min_k = params$min_k,
                   max_k = params$max_k,
                   subsample_prop = params$subsample_prop,
                   num_subsamples = params$num_subsamples,
-                  cluster_method = params$cluster_method)}
-  else{
-    score <- crab(data = crab_data,
-                  min_k = params$min_k,
-                  max_k = params$max_k,
-                  subsample_prop = params$subsample_prop,
-                  num_subsamples = params$num_subsamples,
-                  cluster_method = params$cluster_method)}
+                  cluster_method = params$cluster_method)
 
   return(score)}

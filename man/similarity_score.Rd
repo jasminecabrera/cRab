@@ -4,7 +4,7 @@
 \alias{similarity_score}
 \title{Obtain Similarity Score}
 \usage{
-similarity_score(mean_matrix = mean_matrix)
+similarity_score(mean_matrix = mean_mat)
 }
 \arguments{
 \item{mean_matrix}{The output list produced by mean_matrix()}
@@ -19,6 +19,7 @@ Computes a similarity score representing the squared distance from 1.
 }
 \examples{
 data <- simulate_mvn(n = 10)
-mean_matrix <- mean_matrix(data = data, k = 3, subsample_prop = 0.8, num_subsamples = 3)
+mean_matrix <- mean_matrix(data = data, k = 3, subsample_prop = 0.8,
+num_subsamples = 3, cluster_method = "kmeans")
 similarity_score(mean_matrix)
 }

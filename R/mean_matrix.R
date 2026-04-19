@@ -13,24 +13,16 @@
 #' The dataset to be analyzed
 #'
 #' @param k
-#' The specific number of clusters (k) to evaluate
-#'
-#' Defaults to 3.
+#' The specific number of clusters (k) to evaluate. Defaults to 3.
 #'
 #' @param subsample_prop
-#' Proportion of the dataset to use for each subsample
-#'
-#' Defaults to 0.8
+#' Proportion of the dataset to use for each subsample. Defaults to 0.8.
 #'
 #' @param num_subsamples
-#' Number of subsamples to generate
-#'
-#' Defaults to 10
+#' Number of subsamples to generate. Defaults to 10.
 #'
 #' @param start_seed
-#' Random seed for reproducibility
-#'
-#' Defaults to 123
+#' Random seed for reproducibility. Defaults to 123.
 #'
 #' @param cluster_method
 #' Specified clustering algorithm
@@ -52,9 +44,39 @@ mean_matrix <- function(data = data,
                         subsample_prop = 0.8,
                         num_subsamples = 10,
                         start_seed = 123,
-                        cluster_method = "kmeans"){
+                        cluster_method){
 
-  # call simulate_cluster() function
+  ### INPUT CHECKS:
+  # data is a dataframe
+  if (!is.data.frame(data)) {
+    stop("Data must be in a dataframe.")}
+
+  # k is a positive int
+  if (k %% 1 != 0 || k < 1) {
+    stop("The desired k value must be a positive integer.")}
+
+  # k is 1
+  if (k == 1) {
+    warning("The desired k value is 1 (one cluster).")}
+
+  # sub_sample prop is between 0 and 1
+  if (subsample_prop <= 0 || subsample_prop >= 1) {
+    stop("Subsample proportion needs to be between 0 and 1.")}
+
+  #  num_subsamples is a positive int
+  if (num_subsamples <= 0 || num_subsamples %% 1 != 0) {
+    stop("The number of subsamples must be a positive integer.")}
+
+  # clustering method is kmeans
+  if (cluster_method != "kmeans"){
+    stop("Error: Clustering method does not currently work. Please change to 'kmeans'.")}
+
+  # start seed is a positive int
+  if (start_seed %% 1 != 0 || start_seed < 0) {
+    stop("The seed value must be an integer.")}
+
+  ### FUNCTION:
+  # call buddies_matrix()
   results <- buddies_matrix(data,
                             k = k,
                             subsample_prop = subsample_prop,

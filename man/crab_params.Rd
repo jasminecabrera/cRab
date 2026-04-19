@@ -23,11 +23,9 @@ NULL values for user-specified columns and parameters; the output from crab_prep
 
 \item{num_subsamples}{Number of resamples to generate}
 
-\item{subsample_prop}{Proportion of the dataset to use for each resample
+\item{subsample_prop}{Proportion of the dataset to use for each resample. Defaults to 0.8.}
 
-Defaults to 0.8}
-
-\item{cluster_method}{Specified clustering algorithm}
+\item{cluster_method}{Specified clustering algorithm (i.e "kmeans")}
 }
 \value{
 An updated list containing the dataset, its original column names, the
