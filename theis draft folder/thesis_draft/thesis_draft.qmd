@@ -37,6 +37,7 @@ library(tidymodels)
 library(foreach)
 library(doParallel)
 library(MASS)
+library(gt)
 
 doParallel::registerDoParallel(cores = detectCores() - 5)
 penguins_data <- penguins
@@ -338,6 +339,15 @@ Silhouette Score. The output is a single metric, the cRab score, which provides
 a clear answer for selecting the most appropriate number of clusters while 
 minimizing subjectivity.
 
+
+
+```{r, out.width='103%', out.height='auto'}
+#| label: CRAB Algorithm 
+#| echo: false # Use to hide code but not results
+#| fig-cap: "CRAB Algorithm"
+knitr::include_graphics("../images/crab_alg.png")
+```
+
 ## Preparing the Data
 At the start of the algorithm, missing observations are removed and the desired 
 features are standardized. Standardization ensures that variables with different 
@@ -359,14 +369,18 @@ detect which cluster assignments are consistently reproduced, instead of placing
 confidence on any single clustering of the full dataset.
 
 ## Buddies Matrix
-After clustering each resample, a Buddies Matrix is constructed to track pairwise relationships between observations. This is an $n$ x $n$ matrix where the entry 
+After clustering each resample, a Buddies Matrix, $B$, is constructed to track pairwise 
+relationships between observations. This is an $n$ x $n$ matrix where the entry
 $(i,j)$ encodes whether points $i$ and $j$ were assigned to the same cluster:
 
-- 1 if they are in the same cluster
-
-- -1 if they are in different clusters
-
-- 0 if one or both points are not included in the subsample
+$$
+B_{i,j} =
+\begin{cases}
+1 , & \text{if they are in the same cluster} \\
+-1 , & \text{if they are in different clusters} \\
+0, & \text{if one or both points are not included in the subsample}
+\end{cases}
+$$
 
 To reduce computation and take advantage of symmetry, the diagonal and lower 
 triangle of the matrix are set to NA. Each resample produces one Buddies Matrix, 
@@ -390,7 +404,7 @@ knitr::include_graphics("../images/buddies_data.png")
 Figure 2.2 shows how these pairwise relationships are represented in a Buddies
 Matrix.
 
-```{r, out.width='80%', out.height='auto'}
+```{r, out.width='65%', out.height='auto'}
 #| label: Buddies Matrix Example 
 #| echo: false # Use to hide code but not results
 #| fig-cap: "Buddies Matrix Example"
@@ -431,6 +445,7 @@ signaling that cluster assignments vary significantly depending on the subsample
 This score condenses these various pairwise relationships into a single metric 
 that can be compared across different values of $k$.
 
+
 ## cRab Performance
 By plotting the cRab scores across different values of $k$, the algorithm identifies 
 the most stable clustering as the one with the lowest score. This provides an 
@@ -451,28 +466,23 @@ features provide strong separation between species with minimal overlap across o
 #| echo: false # Use to hide code but not results
 #| fig-cap: "Palmers Penguins Data"
 
-# drop na
-penguins <- palmerpenguins::penguins |>
-  drop_na()
-
 # plot
-penguins |>
+palmerpenguins::penguins |>
+  drop_na() |>
   ggplot(aes(x = bill_length_mm, y = flipper_length_mm, color = species)) +
   geom_point() +
-  theme_minimal() +
-  labs(title = "Palmers Penguins Data",
+  scale_color_manual(values = c("Adelie" = "#d35e7f",
+                                "Chinstrap" = "#23395d",
+                                "Gentoo" = "#a999eb")) +
+  labs(x = "Bill Length (mm)",
+       y = "",
+       title = "Palmer Penguins Data",
        subtitle = "Flipper Length (mm) vs. Bill Length (mm)",
-       x = "Bill Length (mm)",
-       y = "Flipper Length (mm)",
-       color = "Species")
+       color = "Species") +
+  theme_gray() 
 ```
 
-```{r}
-#| include: false
-peng_example <- read_csv(here::here("peng_ex.csv"))
-```
-
-When applying the Elbow Method, the resulting plot in Figure 2.1 shows a gradual 
+When applying the Elbow Method, the resulting plot in Figure 2.5 shows a gradual 
 decrease in WCSS rather than a distinct bend. As discussed previously, this makes 
 it difficult to clearly identify a clear optimal number of clusters, since there 
 is no obvious point where the reduction in error slows significantly. As a result, 
@@ -516,7 +526,7 @@ elbow_dfp |>
   scale_x_continuous(breaks = 1:10)
 ```
 
-The Silhouette Score, shown in Figure 2.2, suggests that two clusters are optimal, 
+The Silhouette Score, shown in Figure 2.6, suggests that two clusters are optimal, 
 as this value produces the highest average silhouette score. According to this metric, 
 the data is best partitioned into two groups. However, this result conflicts with 
 the known structure of the dataset, which contains three distinct species. This 
@@ -527,6 +537,7 @@ separation.
 #| label: penguins ss graph
 #| echo: false # Use to hide code but not results
 #| fig-cap: "Silhouette Score on Palmers Penguins Data"
+
 # set seed for recreation
 set.seed(590)
 
@@ -580,14 +591,26 @@ and objective indication of the suggested number of groupings. More importantly,
 this result aligns with the known structure of the dataset, as defined by the 
 species label.
 
-```{r, out.width='80%', out.height='auto'}
-#| label: penguins crab output
-#| echo: false # Use to hide code but not results
-#| tbl-cap: "cRab Performance on Palmers Penguins Data Table"
-
-knitr::kable(peng_example) |>
-  kableExtra::kable_styling()
+```{r}
+#| include: false
+peng_example <- read_csv(here::here("csv", "peng_ex.csv"), na = character())
+peng_example
 ```
+
+```{r}
+#| label: penguins crab output1
+#| echo: false # Use to hide code but not results
+#| fig-cap: "cRab Performance on Palmers Penguins Data Table"
+#| 
+peng_example |>
+  gt::gt() |>
+  tab_header(title = md("**cRab Score Summary**")) |>
+  cols_label(k = md("**k**"),
+             Score = md("**Score**"),
+             `Time (seconds)` = md("**Time (seconds)**"),
+             `Best Cluster (k)` = md("**Best Cluster (k)**"))
+```
+
 
 ```{r}
 #| label: penguins crab graph
@@ -595,7 +618,7 @@ knitr::kable(peng_example) |>
 #| fig-cap: "cRab Performance on Palmers Penguins Data Line Graph"
 
 peng_example |>
-  ggplot(aes(x = k, y = score)) +
+  ggplot(aes(x = k, y = Score)) +
   geom_line() +
   geom_point() +
   labs(x = "Cluster Value (k)",
@@ -610,9 +633,70 @@ illustrate how cRab performs.
 
 # Package
 
-NO documentation that looks like help page
-+ discussion of functions and design choices
-+ vignette style examples of inputs and outputs
+## Package Goal
+The primary objective of the cRab package is to provide a reliable, automated 
+framework for calculating the CRAB score. We focused on a tidy and efficient 
+implementation that aligns seamlessly with the tools and workflows R users already 
+employ. By formalizing this process into an accessible package, cRab offers a 
+rigorous yet intuitive toolkit for validating cluster structures without the need 
+for complex, custom syntax.
+
+## Design Philosophy and Ecosystem Integration
+The cRab package serves as a specialized extension of the tidyclust ecosystem 
+(cite). By mirroring the foundational principles of the tidymodels (cite) framework, 
+the package treats clustering as an integrated phase of a machine learning workflow 
+rather than a standalone procedure. This architectural choice allows the package 
+to remain familiar to modern data scientists by relying exclusively on standard 
+R objects like tibbles and parsnip-style models. Consequently, cRab fits into 
+existing data pipelines without requiring users to learn or implement custom data 
+formats.
+
+The core logic of cRab is built around the native R pipe (|>) (cite), which 
+establishes a baseline requirement of R Version 4.1. While this introduces a 
+specific version constraint, it prioritizes the long-term stability and readability 
+of the codebase. By utilizing the native pipe, the package reduces external 
+dependencies, such as the magrittr package (cite) which houses the magrittr pipe 
+(%>%), resulting in a lighter installation footprint and more transparent error 
+logs during debugging. This modern approach ensures that the syntax remains 
+intuitive and sustainable as the R language continues to evolve.
+
+The user experience is designed to be intentional and modular, mimicking the 
+“recipe” style of the tidyverse. Rather than implementing a single, complex 
+function call, the package deconstructs the analysis into logical stages: 
+Initialization, Variable Selection, Parameterization, and Execution. This 
+progression guides the user from raw data to a finalized similarity score in a 
+way that feels natural and predictable. The sequence, illustrated below in Figure 
+3.1, ensures that the researcher can focus on the statistical analysis rather 
+than the underlying syntax. By separating the setup from the execution, cRab 
+provides a structured environment that is both robust and accessible.
+
+```{r}
+#| label: workflow diagram
+#| echo: false # Use to hide code but not results
+#| fig-cap: "cRab Package Workflow Diagram"
+
+knitr::include_graphics("../images/workflow.jpg")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # Simulation Study
 test w non spherical data too
@@ -701,466 +785,10 @@ https://CRAN.R-project.org/.
 \let\cleardoublepage\oldcleardoublepage
 
 ```{r}
-#| label: simulate_mvn()
-simulate_mvn <- function(n = 100, 
-                         covariance = 0.4,
-                         desired_k = 3,
-                         start_seed = 123){
-  set.seed(start_seed)
-  
-  # creating covariance matrix
-  cov_matrix <- diag(2) * covariance
-  
-  # if desired k is wanted
-  if (!is.null(desired_k) && desired_k > 0)  {
-    
-    # obs per cluster
-    n_per_cluster <- ceiling(n / desired_k)
-    
-    # distance between each cluster center
-    separation <- 3
-    
-    # create grid coordinates for means
-    grid_coords <- expand.grid(
-      x = seq(0, 
-              by = separation,
-              length.out = ceiling(sqrt(desired_k))),
-      y = seq(0, 
-              by = separation, 
-              length.out = ceiling(sqrt(desired_k))))
-    
-    # pick first k grid points
-    centers <- grid_coords[1:desired_k, ]
-    
-    # generate data
-    data <- do.call(rbind, lapply(1:desired_k, function(k){
-      
-      # determine mean
-      mu <- c(centers$x[k], centers$y[k])
-      
-      # generate clusters
-      MASS::mvrnorm(n = n_per_cluster,
-                    mu = mu,
-                    Sigma = cov_matrix)}))
-  
-  # if no desired kvalue
-  }else{
-    # mu
-    mu <- c(0, 0)
-    
-    # data
-    data <- MASS::mvrnorm(n = n,
-                         mu = mu,
-                         Sigma = cov_matrix)}
-  
-  # change to dataframe
-  data <- as.data.frame(data)
-  
-  # standardize
-  data <- data |>
-  dplyr::mutate(across(c(V1, V2), ~ (. - mean(.)) / sd(.)))
-  
-  # change col names
-  colnames(data) <- c("V1", "V2")
-  
-  return(data)}
-```
-
-# buddies_matrix()
-
-```{r}
-#| label: buddies_matrix()
-buddies_matrix <- function(data = data, 
-                           k = 3,
-                           subsample_prop = 0.8, 
-                           num_subsamples = 10,
-                           start_seed = 123){
-  
-  # drop na
-  data <- data |>
-    drop_na() |>
-    scale() |>
-    as.data.frame()
-  
-  # add index
-  data$index <- 1:nrow(data)
-  
-  # initialize results list
-  results <- list()
-
-  # holds matrix for each subsample in each k
-  results <- foreach(i = 1:num_subsamples,
-                     .packages = c("tidyclust", 
-                                   "tidyverse", 
-                                   "tidymodels")) %dopar% {
-
-                       # initalizing blank matrix              
-                       result_matrix <- matrix(0, 
-                                               nrow = nrow(data),
-                                               ncol = nrow(data))
-                       
-                       # seed
-                       set.seed(start_seed + i)
-                     
-                       # resample
-                       random_sample <- data |>
-                         filter(index %in% sample(
-                           index, 
-                           subsample_prop * nrow(data))) 
-                       
-                       # kmeans
-                       kmodel <- k_means(num_clusters = k) |>
-                         fit(~ random_sample[[1]] + 
-                               random_sample[[2]],
-                             data = random_sample)
-
-                       # assign points to cluster
-                       intermediate <- data.frame(
-                         random_sample$index,
-                         extract_cluster_assignment(kmodel) |>
-                           mutate(.cluster = as.character(.cluster)),
-                         stringsAsFactors = FALSE)
-                       
-                       # rename columns
-                       colnames(intermediate) <- c("index", "cluster")
-                
-                      # assign results matrix (-1, 1, 0)
-                      for (c in unique(intermediate$cluster)){
-                        idx <- intermediate[intermediate$cluster == c, 
-                                            ]$index
-                        
-                        if (length(idx) > 1){
-                          idx <- sort(unlist(idx), method = "radix")
-                          ones <- t(combn(idx, 2))
-                          result_matrix[ones[, 1], ones[, 2]] <- 1}
-                        
-                        neg_one_idx <- expand.grid(
-                          idx,
-                          setdiff(random_sample$index, idx))
-                        
-                        result_matrix[neg_one_idx[, 1], 
-                                      neg_one_idx[, 2]] <- -1}
-                       
-                      # set lower triangle and diagonal to NA
-                      result_matrix[lower.tri(result_matrix, 
-                                              diag = TRUE)] <- NA
-                      return(result_matrix)}
-
-  # return results
-  return(results)}
-```
-
-# mean_matrix()
-
-```{r}
-#| label: mean_matrix()
-mean_matrix <- function(data = data,
-                          k = 3,
-                          subsample_prop = 0.8,
-                          num_subsamples = 10,
-                          start_seed = 123){
-  
-  # call simulate_cluster() function
-  results <- buddies_matrix(data, 
-                              k = k,
-                              subsample_prop = subsample_prop, 
-                              num_subsamples = num_subsamples,
-                              start_seed = start_seed)
-  
-  # abs value the entire matrix for all matrices
-  absolute_sum <- lapply(results, abs)
-  
-  # get sum of abs value in final matrix
-  absolute_final <- absolute_sum |>
-    reduce(`+`)
-  
-  # get sum of values in final matrix
-  numerator <- results |>
-    reduce(`+`)
-  
-  return(list(matrices = results, score = numerator/absolute_final))}
-```
-
-# similarity_score()
-
-```{r}
-#| label: similarity_score()
-similarity_score <- function(mean_matrix = mean_matrix){
-  
-  # get score matrix
-  mean_matrix_score <- mean_matrix$score 
-  
-  # transforms into vector
-  result_vector <- as.vector(mean_matrix_score)
-  
-  # keeps only non NA values
-  result_vector <- abs(result_vector[!is.na(result_vector)])
-  
-  # finds squared distance from one
-  return(sum((1 - result_vector)**2))}
-```
-
-# crab()
-
-```{r}
-#| label: crab()
-crab <- function(data,
-                  n = 100, 
-                  min_k = 2,
-                  max_k = 5,
-                  subsample_prop = 0.8, 
-                  num_subsamples = 10,
-                  start_seed = 123){
-  
-  # intialize score list
-  k_scores <- data.frame(k = numeric(),
-                         score = numeric(),
-                         time = numeric(),
-                         best_clust = character())
-  
-  # iterate over k values
-  for (k in min_k:max_k){
-      # start time
-      tictoc::tic()
-    
-      # get buddies matrices and overall mean matrix
-      mean_matrix <- mean_matrix(data = data, 
-                                 k = k, 
-                                 subsample_prop = subsample_prop, 
-                                 num_subsamples = num_subsamples, 
-                                 start_seed = start_seed)
-      
-      # store all scores
-      score <- similarity_score(mean_matrix = mean_matrix)
-      
-      # end time
-      time_info <- tictoc::toc(quiet = TRUE)
-      
-      # calculate execution time
-      elapsed_time <- time_info$toc - time_info$tic
-      
-      # add to results
-      k_scores <- rbind(k_scores,
-                        data.frame(k = k,
-                                   score = score,
-                                   time = elapsed_time,
-                                   best_clust = ""))}
-      
-  # find row with lowest score 
-  best_score_idx <- which.min(k_scores$score)
-  k_scores$best_clust[best_score_idx] <- "BEST"
-  
-  # get similarity score
-  return(k_scores)}
-```
-
-# repeat_simulations()
-
-```{r}
-#| label: repeat_simulations()
-repeat_simulations <- function(crab_setup = NULL,
-                               data = NULL,
-                               num_runs,
-                               n = 100,
-                               covariance, 
-                               desired_k = 3, 
-                               min_k,
-                               max_k,
-                               subsample_prop = 0.8, 
-                               num_subsamples,
-                               start_seed = 123) {
-  
-  if (!is.null(crab_setup)){
-    # assign data
-    sim_data <- crab_setup$data
-    
-    # check params
-    if (is.null(crab_setup$specified_params)){
-      stop("Error: You have not specified your parameters. 
-           Call crab_sim_params() first.")}
-    
-    # assign params
-    params <- crab_setup$specified_params
-    num_runs = params$num_runs
-    n = params$n
-    min_k = params$min_k
-    max_k = params$max_k
-    subsample_prop = params$subsample_prop
-    num_subsamples = params$num_subsamples
-    
-     if(!is.null(params$covariance)){
-      covariance = params$covariance
-      desired_k = params$desired_k}}
-  
-  # initialize results list
-  results_list <- list()
-  
-  # create counter
-  counter <- 1
-  
-  # loop through covariances
-  for (cov in covariance) {
-     # simulate data
-      if (is.null(data)) {
-          sim_data <- simulate_mvn(n = n,
-                         covariance = cov, 
-                         desired_k = desired_k)}
-    
-    # loop through number of runs/reps
-    for (i in seq_len(num_runs)) {
-      # alternate seed
-      current_seed <- start_seed + i
-      
-      # call crab()
-      sim_result <- crab(data = sim_data,
-                         start_seed = current_seed,
-                         n = n,
-                         min_k = min_k,
-                         max_k = max_k,
-                         subsample_prop = subsample_prop, 
-                         num_subsamples = num_subsamples)
-      
-      # add rep identifier
-      sim_result$run <- i
-      
-      # add covariance identifier
-      sim_result$cov <- cov
-      
-      # store result
-      results_list[[counter]] <- sim_result
-      
-      # increase counter
-      counter <- counter + 1}}
-  
-  # combine all results
-  all_results <- do.call(rbind, results_list)
-  return(all_results)}
-```
-
-# crab_prep()
-```{r}
-crab_prep <- function(data){
-  # grab all columns, leave user choices NULL
-  data_info <- list(data = data, 
-                    original_cols = colnames(data),
-                    specified_cols = NULL,
-                    specified_params = NULL)
-  
-  return(data_info)}
-```
-
-# crab_cols()
-```{r}
-crab_cols <- function(data_info, chosen_cols){
-  # check if chosen columns exist
-  missing_cols <- setdiff(chosen_cols, data_info$original_cols)
-  
-  # leave error message if columns dont exist
-  if (length(missing_cols) > 0) {
-    stop("Column(s) do not exist: ",
-         paste(missing_cols, collapse = ", "))}
-  
-  # update specified cols
-  data_info$specified_cols <- chosen_cols
-  
-  return(data_info)}
+# enter functions here
 ```
 
 
-# crab_params()
-```{r}
-crab_params <- function(data_info, min_k, max_k, num_subsamples, 
-                        subsample_prop = 0.8){
-  # check min_k and max_k
-  if (min_k > max_k){
-    stop("Error: min_k must be <= max_k.")}
-    
-  # check subsample prop
-  if (subsample_prop >= 1){
-    stop("Error: subsample_prop must be < 1.")}
-  
-  # update specified params
-  data_info$specified_params <- list(
-    min_k = min_k,
-    max_k = max_k,
-    num_subsamples = num_subsamples,
-    subsample_prop = subsample_prop)
-  
-  return(data_info)}
-```
-
-# crab_sim_params()
-```{r}
-crab_sim_params <- function(data_info, min_k, max_k, num_subsamples, 
-                            n = 100, covariance, desired_k = 3, 
-                            subsample_prop = 0.8, num_runs){
-  # check min_k and max_k
-  if (min_k > max_k){
-    stop("Error: min_k must be <= max_k.")}
-    
-  if (min_k < 0){
-    stop("Error: min_k must be > 0.")}
-  
-  if (max_k < 0){
-    stop("Error: max_k must be > 0.")}
-  
-  # check subsample prop
-  if (subsample_prop >= 1){
-    stop("Error: subsample_prop must be < 1.")}
-  
-  # check num_runs
-  if (num_runs < 0){
-    stop("Error: num_runs must be > 0.")}
-  
-  # update specified params
-  data_info$specified_params <- list(
-    min_k = min_k,
-    max_k = max_k,
-    num_subsamples = num_subsamples,
-    n = n,
-    covariance = covariance,
-    desired_k = desired_k,
-    subsample_prop = subsample_prop,
-    num_runs = num_runs)
-  
-  return(data_info)}
-```
 
 
-# crab_bake()
-```{r}
-crab_bake <- function(data_info){
-  # check cols are chosen
-  if (is.null(data_info$specified_cols)){
-    stop("No columns have been specified. Call crab_cols() first.")}
-  
-  # check params are chosen
-  if (is.null(data_info$specified_params)){
-    stop("No parameters have been specified. Call crab_params() first.")}
-
-  # grab data with chosen cols
-  crab_data <- data_info$data[, data_info$specified_cols, drop = FALSE]
-  
-  # grab params
-  params <- data_info$specified_params
-  
-  if(!is.null(params$covariance)){
-  # call crabs 
-  score <- crab(data = crab_data,
-                n = params$n,
-                covariance = params$covariance,
-                desired_k = params$desired_k,
-                min_k = params$min_k,
-                max_k = params$max_k,
-                subsample_prop = params$subsample_prop,
-                num_subsamples = params$num_subsamples)}
-  else{
-    score <- crab(data = crab_data,
-                min_k = params$min_k,
-                max_k = params$max_k,
-                subsample_prop = params$subsample_prop,
-                num_subsamples = params$num_subsamples)}
-  
-  return(score)}
-```
 

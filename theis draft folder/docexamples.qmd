@@ -268,4 +268,22 @@ write.csv(peng_ex, "peng_ex.csv", row.names = FALSE)
 peng_example <- read_csv(here::here("peng_ex.csv"), na = character())
 peng_example |>
   gt::gt()
+
+```
+
+```{r}
+#| warning: false
+palmerpenguins::penguins |>
+  ggplot(aes(x = bill_length_mm, y = flipper_length_mm, color = species)) +
+  geom_point() +
+  scale_color_manual(values = c("Adelie" = "#d35e7f",
+                                "Chinstrap" = "#23395d",
+                                "Gentoo" = "#a999eb")) +
+  labs(x = "Bill Length (mm)",
+       y = "",
+       title = "Palmer Penguins Data",
+       subtitle = "Flipper Length (mm) vs. Bill Length (mm)",
+       color = "Species") +
+  theme_gray() 
+
 ```
