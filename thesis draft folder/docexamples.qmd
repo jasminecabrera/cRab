@@ -1,0 +1,304 @@
+---
+title: "doc examples"
+format: html
+editor: visual
+---
+
+```{r}
+source("thesis_draft/functions.R/functions.R")
+```
+
+## Original Data
+
+```{r}
+# library and seed
+library(MASS)
+library(tidyverse)
+set.seed(590)
+
+# number of observations per cluster
+n <- 150
+
+# generate points from mvnorm disb'n
+sigma1 <- matrix(c(4, 3,
+                   3, 3), nrow = 2)
+cluster1 <- mvrnorm(n, 
+                    mu = c(0, 0), 
+                    Sigma = sigma1)
+
+# generate points from mvnorm disb'n
+sigma2 <- matrix(c(6, 0,
+                   0, 0.25), nrow = 2)
+cluster2 <- mvrnorm(n, 
+                    mu = c(6, 4), 
+                    Sigma = sigma2)
+
+# generate points from mvnorm disb'n
+sigma3 <- matrix(c(4, 1.5,
+                   1.5, 1), nrow = 2)
+cluster3 <- mvrnorm(n, mu = c(1, -3.5), 
+                    Sigma = sigma3)
+
+# join points to create data frame
+df <- data.frame(
+  x = c(cluster1[,1], cluster2[,1], cluster3[,1]),
+  y = c(cluster1[,2], cluster2[,2], cluster3[,2]),
+  cluster = factor(rep(c("Cluster 1", "Cluster 2", "Cluster 3"),
+                       each = n)))
+
+# scaling
+df_scaled <- df
+df_scaled[,c(1,2)] <- scale(df_scaled[,c(1,2)])
+
+# plot data
+ggplot(df_scaled, aes(x = x, y = y, color = cluster)) +
+  geom_point() +
+  theme_minimal() +
+  labs(title = "Original Data with True Cluster Assignments",
+       color = "Cluster")
+```
+
+## Elbow Method Performance
+
+```{r}
+# grab x and y cols from data frame
+X <- as.matrix(df_scaled[, c("x", "y")])
+
+# get wcss
+wcss <- sapply(1:10, function(k) {
+  kmeans(X, centers = k, nstart = 25)$tot.withinss})
+
+# create data frame of wcss
+elbow_df <- data.frame(
+  k = 1:10,
+  wcss = wcss)
+
+# plot elbow method
+elbow_df |>
+  ggplot(aes(x = k, y = wcss)) +
+  geom_point() +
+  geom_line() +
+  theme_minimal() +
+  labs(title = "Elbow Method Using Total Within-Cluster Sum of Squares",
+       x = "Number of Clusters (k)",
+       y = NULL) +
+  scale_x_continuous(breaks = 1:10)
+```
+
+## cRab Score Performance
+
+```{r}
+#| eval: false
+# original code
+ns_data <- df |>
+  crab_prep() |>
+  crab_cols(c("x", "y")) |>
+  crab_params(min_k = 2, max_k = 5, num_subsamples = 100, 
+              cluster_method = "kmeans") |>
+  crab_bake()
+
+ns_data1 <- df |>
+  crab_prep() |>
+  crab_cols(c("x", "y")) |>
+  crab_params(min_k = 2, max_k = 5, num_subsamples = 100, 
+              subsample_prop = 0.9, cluster_method = "kmeans") |>
+  crab_bake()
+
+# save datasets
+write.csv(ns_data, "nsdata_updated.csv", row.names = FALSE)
+write.csv(ns_data1, "nsdata1_updated.csv", row.names = FALSE)
+```
+
+```{r}
+# load datasets
+nsdata <- read_csv(here::here("nsdata_updated.csv"))
+nsdata1 <- read_csv(here::here("nsdata1_updated.csv"))
+
+# num_subsamples = 100, subsample_prop = 0.8
+nsdata
+
+# num_subsamples = 100, subsample_prop = 0.9
+nsdata1
+```
+
+## kMeans Assignments
+
+```{r}
+# kmeans
+km <- kmeans(df_scaled[,c(1,2)], centers = 3, nstart = 1)
+
+# plot
+ggplot(df_scaled) +
+  geom_point(aes(x = x, 
+                 y = y, 
+                 color = factor(km$cluster))) +
+  geom_point(data = data.frame(km$centers), aes(x = x, y = y), size = 2) +
+  theme_minimal() +
+  labs(title = "kMeans Cluster Assignments",
+       color = "Cluster Assignment")
+```
+
+## Point Distribution
+
+```{r}
+# data
+df_mm <- df |>
+  dplyr::select(-cluster)
+
+# mean matrix
+mean_matrix1 <- mean_matrix(data = df_mm,
+                           k = 3,
+                           subsample_prop = 0.8,
+                           num_subsamples = 10,
+                           cluster_method = "kmeans")
+
+# get contributions
+contributions <- point_contribution(data = df_mm, 
+                                    mean_matrix = mean_matrix1)
+
+# plot data
+ggplot(df_scaled, aes(x = x, y = y, color = contributions$singlePointContribution)) +
+  scale_color_gradient(low = "darkblue", high = "red") +
+  geom_point() +
+  theme_minimal() +
+  labs(title = "Original Data with Point Contribution",
+       color = "Point Contribution")
+```
+
+## Clear Clustering Example
+
+```{r}
+# simulate mvn data
+mvn_df <- simulate_mvn(n = 400, variance = 0.4, desired_k = 3)
+
+# plot
+ggplot(mvn_df, aes(x = X1, y = X2)) +
+  geom_point() +
+  theme_minimal() +
+  labs(x = "x",
+       y = "y",
+       title = "MVN Data")
+```
+
+```{r}
+# km
+km1 <- kmeans(mvn_df, centers = 3, nstart = 1)
+
+# plot
+ggplot(mvn_df) +
+  geom_point(aes(x = X1, 
+                 y = X2, 
+                 color = factor(km1$cluster))) +
+  geom_point(data = data.frame(km1$centers), 
+             aes(x = X1, y = X2), size = 2) +
+  theme_minimal() +
+  labs(title = "kMeans Cluster Assignments",
+       color = "Cluster Assignment")
+```
+
+```{r}
+# mean matrix
+mean_matrix_mvn <- mean_matrix(data = mvn_df,
+                               k = 3,
+                               subsample_prop = 0.8,
+                               num_subsamples = 10,
+                               cluster_method = "kmeans")
+
+# get contributions
+mvn_contributions <- point_contribution(data = mvn_df, 
+                                         mean_matrix = mean_matrix_mvn)
+
+# plot data
+ggplot(mvn_df, aes(x = X1, y = X2, 
+                   color = mvn_contributions$singlePointContribution)) +
+  scale_color_gradient(low = "darkblue", high = "red") +
+  geom_point() +
+  theme_minimal() +
+  labs(title = "Original Data with Point Contribution",
+       color = "Point Contribution")
+```
+
+```{r}
+# grab x and y cols from data frame
+X <- as.matrix(mvn_df[, c("X1", "X2")])
+
+# get wcss
+wcss_mvn <- sapply(1:10, function(k) {
+  kmeans(X, centers = k, nstart = 25)$tot.withinss})
+
+# create data frame of wcss
+elbow_mvn_df <- data.frame(
+  k = 1:10,
+  wcss = wcss_mvn)
+
+# plot elbow method
+elbow_mvn_df |>
+  ggplot(aes(x = k, y = wcss_mvn)) +
+  geom_point() +
+  geom_line() +
+  theme_minimal() +
+  labs(title = "Elbow Method Using Total Within-Cluster Sum of Squares",
+       x = "Number of Clusters (k)",
+       y = NULL) +
+  scale_x_continuous(breaks = 1:10)
+```
+
+# Penguins Data
+
+```{r}
+set.seed(590)
+
+# drop na
+penguins <- palmerpenguins::penguins |>
+  drop_na()
+
+# crab
+peng_ex <- penguins |>
+  crab_prep() |>
+  crab_cols(c("flipper_length_mm", "bill_length_mm")) |>
+  crab_params(min_k = 2, max_k = 6, subsample_prop = 0.8,
+              num_subsamples = 100, cluster_method = "kmeans") |>
+  crab_bake()
+
+peng_ex |>
+  gt::gt()
+
+readr::write_csv(peng_ex, "peng_ex.csv")
+write.csv(peng_ex, "peng_ex.csv", row.names = FALSE)
+peng_example <- read_csv(here::here("thesis draft folder", "peng_ex.csv"), na = character())
+peng_example |>
+  gt::gt()
+
+```
+
+```{r}
+#| warning: false
+palmerpenguins::penguins |>
+  ggplot(aes(x = bill_length_mm, y = flipper_length_mm, color = species)) +
+  geom_point() +
+  scale_color_manual(values = c("Adelie" = "#d35e7f",
+                                "Chinstrap" = "#23395d",
+                                "Gentoo" = "#a999eb")) +
+  labs(x = "Bill Length (mm)",
+       y = "",
+       title = "Palmer Penguins Data",
+       subtitle = "Flipper Length (mm) vs. Bill Length (mm)",
+       color = "Species") +
+  theme_gray() 
+
+```
+
+```{r}
+# crab
+set.seed(590)
+iris_ex <- iris |>
+  crab_prep() |>
+  crab_cols(c("Petal.Length", "Petal.Width")) |>
+  crab_params(min_k = 2, max_k = 5, subsample_prop = 0.8,
+              num_subsamples = 100, cluster_method = "kmeans") |>
+  crab_bake()
+
+iris_ex
+readr::write_csv(iris_ex, "iris_ex.csv")
+write.csv(iris_ex, "iris_ex.csv", row.names = FALSE)
+```
