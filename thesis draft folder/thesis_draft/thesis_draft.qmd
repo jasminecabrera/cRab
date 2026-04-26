@@ -717,7 +717,7 @@ maximize flexibility and readability, cRab deconstructs the requirements into tw
 modular functions: crab_cols() and crab_params(). The first function, crab_cols(), 
 manages variable selection, allowing the user to define which features contribute 
 to the distance metrics and cluster validation. This function populates the 
-specified_cols element within the crab_prep object (Figure 3.2).
+specified_cols element within the crab_prep object (Figure 3.3).
 
 
 ```{r}
@@ -739,7 +739,7 @@ knitr::include_graphics("../images/crab_col_output.png")
 
 Complementing this, crab_params() defines the hyperparameters required for the 
 Buddies and Rivals logic, such as subsampling rates or iteration counts. This step 
-updates the specified_params element. (Figure 3.3).
+updates the specified_params element (Figure 3.4).
 
 ```{r}
 #| label: crab_params example
@@ -759,14 +759,12 @@ iris |>
 knitr::include_graphics("../images/crab_params_output.png")
 ```
 
-As shown in Figure 3.5, these two functions are both order-independent and idempotent. 
-Consequently, a researcher can call crab_cols() after crab_params(), or vice versa, 
-and overwrite previous specifications without compromising the object’s integrity. 
-Each call updates a specific slot within the crab_prep() metadata list without altering 
-the original data. This design emulates the recipe style of tidymodels ecosystem, 
-where instructions are layered onto an object without “baking” them into the final 
-result.
-
+These two functions are both order-independent. Consequently, a researcher can 
+call crab_cols() after crab_params(), or vice versa, and overwrite previous specifications 
+without compromising the object’s integrity. Each call updates a specific slot 
+within the crab_prep metadata list without altering the original data. This design 
+emulates the recipe style of tidymodels ecosystem, where instructions are layered 
+onto an object without “baking” them into the final result.
 
 ```{r}
 #| label: configuration example
@@ -890,27 +888,23 @@ rigor behind the CRAB score.
 ## Synthetic Data Generation
 
 While cRab is designed to validate clusters in real-world datasets, evaluating the
-package’s sensitivity can be done with a controlled dataset where the ground truth 
-of the cluster structure is known. To facilitate this, the package includes simulate_mvn(), 
-a utility designed to generate synthetic data from Multivariate Normal (MVN) distributions. 
-This internal framework allows users to benchmark the CRAB score against datasets 
-with mathematically defined properties before applying the tool to ambiguous, and 
-unlabeled data.
+package’s sensitivity can be done with a controlled dataset where the "ground truth"
+of the cluster structure is known. To explore this, the package includes simulate_mvn(), 
+a utility that allows users to benchmark the CRAB score against datasets with specified
+cluster properties before applying the tool to ambiguous, and unlabeled data.
 
-We intentionally chose MVN distributions because they offer precise control over 
-cluster separation, orientation, and density. By utilizing MVN distributions, cRab 
-simulates various degrees of cluster overlap, and geometric tilting (covariance). 
-This allows the user to test the CRAB score’s ability to identify instability as 
-clusters converge and diverge.
+Multivariate Normal (MVN) distributions were intentionally selected for this framework
+because they offer precise control over cluster separation, orientation, and density. 
+By manipulating the covariance structures of these distributions, cRab can simulate
+various degrees of cluster overlap, and geometric tilting. 
 
-The simulate_mvn() function constructs a covariance matrix based on the constraints 
-defined by the user. This function requires three primary inputs: the number of 
-observations $n$, the variance, and the desired number of clusters. The variance 
-is used to construct the covariance matrix. By increasing the variance, the user 
-can purposely move clusters closer together. 
+Mechanically, simulate_mvn() translates these constraints into data using three 
+primary user inputs: the total number of observations ($n$), the desired number 
+of clusters ($k$), and a variance scalar. By adjusting these parameters, the user 
+can purposely induce cluster overlap, or maintain clearly separated boundaries.
 
 ```{r}
-#| label: simulate_mvn() example
+#| label: simulate_mvn() plot example
 #| echo: false # Use to hide code but not results
 #| fig-cap: "Synthetic Data Generated from simulate_mvn()"
 
@@ -926,33 +920,116 @@ data |>
   theme_bw()
 ```
 
-A key feature of simulate_mvn() is its compatibility with the main functional pipeline. 
-The workflow treats the synthetic data with the same logic as real-world data, 
-allowing for a seamless transition from simulation to analysis. When paired with 
-repeated_simulations(), the package applies the CRAB algorithm to a specified number 
-of datasets with identical parameter constraints.
+For a single analysis of simulated data, the workflow follows the standard pipeline 
+(Figure 3.7). In this scenario, simulate_mvn() generates a static dataframe which is then passed through the standard preprocessing and parameter-specification layers.
 
 ```{r}
+#| label: simulate_mvn() example
+#| echo: false # Use to hide code but not results
+#| fig-cap: "Singular Synthetic Dataset Generation with CRAB Algorithm Workflow"
+
+knitr::include_graphics("../images/simulate_mvn_wf.png")
+```
+
+
+Below is an example code chunk:
+```{r}
+#| label: simulate_mvn() workflow example
+#| echo: true # Use to hide code but not results
+#| eval: false
+
+# data from simulate_mvn()
 data |>
   crab_prep() |>
   crab_cols(c("X1", "X2")) |>
   crab_params(min_k = 2, max_k = 5, num_subsamples = 10,
               cluster_method = "kmeans") |>
   crab_bake()
-
-
-# fix 
 ```
-[insert simulation workflow]
+
+When evaluating the CRAB algorthim's performance across multiple iterations or varying 
+noise levels, the pipeline shifts to a parameter focused workflow (Figure 3.8). This is outlined
+by two primary options. The first approach follows a similar pipeline architecture as 
+the main pipeline. This process begins with passing NULL to crab_prep(), and calling crab_sim_params() to define generative parameters (i.e. num_runs, variance, and n). 
+This is concluded with repeat_simulations(), which replaces crab_bake() and applies 
+the CRAB algorithm to a specified number of datasets with identical parameter constraints. Alternatively, the user can avoid the pipeline and pass in all parameters into
+repeat_simulations() directly.
+
+```{r}
+#| label: repeat_simulations() workflow example
+#| echo: false # Use to hide code but not results
+#| fig-cap: "Multiple Synthetic Dataset Generation with CRAB Algorithm Workflow"
+
+knitr::include_graphics("../images/repeat_sim_wf.png")
+```
+
+To illustrate these options, consider the following implementations:
+```{r}
+#| label: repeat_simulations() example
+#| echo: true # Use to hide code but not results
+#| eval: false
+
+# option 1 -- pipeline format
+crab_prep(data = NULL) |>
+  crab_sim_params(min_k = 2, max_k = 5, num_subsamples = 10, 
+                  num_runs = 2, variance = c(0.3, 0.4), 
+                  cluster_method = "kmeans") |>
+  repeat_simulations()
+
+# option 2 -- directly passing in parameters
+repeat_simulations(min_k = 2, max_k = 5, num_subsamples = 10, 
+                   num_runs = 2, variance = c(0.3, 0.4), 
+                   cluster_method = "kmeans")
+```
+
 Chapter 4 provides more insight into the specific performance results of these 
 simulations.
 
+### Point Diagnostics
 
+Beyond providing a global assessment of cluster stability, the cRab framework also 
+includes specialized diagnostic tools to identify specific drivers of that stability, 
+or rather, the sources of instability. The point contribution() function allows for 
+a granular, observation-level analysis, quantitatively and visually isolating how 
+each individual data point impacts the final CRAB score.
 
+In practice, raw instability values are difficult to interpret. While mathematically 
+useful, these values can be visually overwhelming when plotted because the scale 
+of influence varies significantly across different datasets and dimensionalities. 
+To improve interpretability, point_contribution() utilizes a sigmoid transformation. 
+This mapping projects raw contribution metrics onto a bounded 0 to 1 scale, effectively 
+normalizing the influence of each observation.
 
+```{r}
+#| label: point_contribution() plot example
+#| echo: false # Use to hide code but not results
+#| fig-cap: "Point Contribution Example"
+#| message: false
 
+# contribution csv
+contributions <- read_csv(here::here("thesis draft folder", "csv", "point_contribution.csv"), 
+                         na = character())
 
+# df csv
+df_scaled <- read_csv(here::here("thesis draft folder", "csv", "pc_df.csv"), 
+                         na = character())
 
+# plot data
+ggplot(df_scaled, aes(x = x, y = y, color = contributions$singlePointContribution)) +
+  scale_color_gradient(low = "darkblue", high = "red") +
+  geom_point() +
+  theme_minimal() +
+  labs(color = "Point Contribution Score")
+```
+
+The sigmoid transformation highlights the “swing voters” within the dataset. These 
+observations are typically located in ambiguous regions, often between cluster boundaries, 
+making them the most likely to switch cluster assignments across subsamples. In 
+Figure 3.9, we see a clear example of this phenomenon. The bright red points are 
+concentrated in the specific areas where clusters determine their boundaries. As 
+a result, they yield a higher contribution to the final CRAB score. This function 
+allows researchers to pinpoint the exact observations that disproportionately drive 
+the final CRAB score.
 
 
 

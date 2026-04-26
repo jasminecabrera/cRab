@@ -152,9 +152,12 @@ mean_matrix1 <- mean_matrix(data = df_mm,
                            num_subsamples = 10,
                            cluster_method = "kmeans")
 
+mean_matrix1
 # get contributions
 contributions <- point_contribution(data = df_mm, 
                                     mean_matrix = mean_matrix1)
+
+contributions
 
 # plot data
 ggplot(df_scaled, aes(x = x, y = y, color = contributions$singlePointContribution)) +
@@ -163,6 +166,9 @@ ggplot(df_scaled, aes(x = x, y = y, color = contributions$singlePointContributio
   theme_minimal() +
   labs(title = "Original Data with Point Contribution",
        color = "Point Contribution")
+
+write.csv(contributions, "point_contribution.csv", row.names = FALSE)
+write.csv(df_scaled, "pc_df.csv", row.names = FALSE)
 ```
 
 ## Clear Clustering Example
@@ -216,6 +222,7 @@ ggplot(mvn_df, aes(x = X1, y = X2,
   theme_minimal() +
   labs(title = "Original Data with Point Contribution",
        color = "Point Contribution")
+
 ```
 
 ```{r}
