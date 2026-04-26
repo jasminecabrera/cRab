@@ -3,13 +3,9 @@
 #' @description
 #' Runs crab() repeatedly for a specified number of iterations, defined by num_runs.
 #'
-#' @param crab_setup
-#' a list containing the dataset, the original column names, and placeholder
-#' NULL values for user-specified columns and parameters; the output from crab_prep()
-#'
-#' @param data
-#' The simulated dataset to be analyzed. Note: if not used, simulate_mvn() will
-#' be called.
+#' @param crab_setup 
+#' A list containing a NULL dataset, NULL original column names, and values for 
+#' user-specified columns and parameters; the output from crab_prep()
 #'
 #' @param num_runs
 #' Number of iterations
@@ -18,7 +14,7 @@
 #' Number of observations to generate. Defaults to 100. Note: If n does not split
 #' evenly by desired_k, it will be rounded up.
 #'
-#' @param covariance
+#' @param variance
 #' List of variance values or single value used to construct the covariance
 #' matrix for the dataset
 #'

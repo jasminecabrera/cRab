@@ -255,13 +255,7 @@ crab(data = data3,
 
 **Parameters:**
 
--   data *(list)*: the simulated dataset to be analyzed
-
-    -   **Note:** if not used, simulate_mvn() will be called
-
-    -   *Default:* NULL
-
--   crab_setup *(list)*: a list containing the dataset, the original column names, and placeholder NULL values for user-specified columns and parameters; the output from *crab_prep()*
+-   crab_setup *(list)*: a list containing a NULL dataset, NULL original column names, and values for user-specified columns and parameters; the output from *crab_prep()*
 
     -   *Default:* NULL
 
@@ -273,7 +267,7 @@ crab(data = data3,
 
     -   *Default*: 100
 
--   covariance *(list/integer)*: list of variance values or single value used to construct the covariance matrix for the dataset
+-   variance *(list/integer)*: list of variance values or single value used to construct the covariance matrix for the dataset
 
 -   desired_k *(integer)*: the specific number of clusters *(k)* to evaluate
 
