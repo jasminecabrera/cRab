@@ -62,58 +62,29 @@ penguins |>
 
 ## repeat_simulations() testing
 
-**pipeline:**
-
-```{r}
-# must run simulated data first
-simulated_data <- simulate_mvn()
-
-# create crab_setup with data, prep, and sim. params pipeline
-crab_setup1 <- simulated_data |>
-  crab_prep() |>
-  crab_sim_params(min_k = 2, max_k = 5, num_subsamples = 10, num_runs = 2, 
-                  covariance = 0.3, cluster_method = "kmeans")
-
-repeat_simulations(crab_setup1)
-```
-
-```{r}
-## OPTION 1:
-# must run simulated data first
-simulated_data <- simulate_mvn()
-
-# create crab_setup with data, prep, and sim. params pipeline
-crab_setup2 <- simulated_data |>
-  crab_prep() |>
-  crab_sim_params(min_k = 2, max_k = 5, num_subsamples = 10, 
-                  num_runs = 2, covariance = c(0.3, 0.4),
-                  cluster_method = "kmeans")
-
-repeat_simulations(crab_setup2)
-
-## OPTION 2:
-# create crab_setup with prep(data), and sim. params pipeline
-crab_setup3 <- crab_prep(simulated_data) |>
-  crab_sim_params(min_k = 2, max_k = 5, num_subsamples = 10, 
-                  num_runs = 2, covariance = c(0.3, 0.4),
-                  cluster_method = "kmeans")
-
-repeat_simulations(crab_setup3)
-```
-
-```{r}
-# error messages if additional params. listed on top of crab_setup
-crab_setup4 <- crab_prep(simulated_data) |>
-  crab_sim_params(min_k = 2, max_k = 5, num_subsamples = 10, 
-                  num_runs = 2, covariance = c(0.3, 0.4), cluster_method = "kmeans")
-
-repeat_simulations(crab_setup4, covariance = c(0.1, 0.2))
-```
-
 **individual function:**
 
 ```{r}
-# automatically calls simulate_mvn()
-repeat_simulations(min_k = 2, max_k = 5, num_subsamples = 10, 
-                   num_runs = 2, covariance = c(0.3, 0.4), cluster_method = "kmeans")
+# option 1
+test1 <- repeat_simulations(min_k = 2, max_k = 5, num_subsamples = 10, 
+                   num_runs = 2, variance = c(0.3, 0.4), cluster_method = "kmeans")
+test1
+```
+
+**pipeline:**
+
+```{r}
+# option 2
+crab_setup <- crab_prep(data = NULL) |>
+              crab_sim_params(min_k = 2, max_k = 5, num_subsamples = 10, 
+                              num_runs = 2, variance = c(0.3, 0.4), cluster_method = "kmeans") 
+repeat_simulations(crab_setup)
+```
+
+```{r}
+# option 3
+crab_prep(data = NULL) |>
+              crab_sim_params(min_k = 2, max_k = 5, num_subsamples = 10, 
+                              num_runs = 2, variance = c(0.3, 0.4), cluster_method = "kmeans") |>
+  repeat_simulations()
 ```

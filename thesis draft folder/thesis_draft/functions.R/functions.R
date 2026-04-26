@@ -359,7 +359,6 @@ crab <- function(data,
 
 ################################################################################
 repeat_simulations <- function(crab_setup = NULL,
-                               data = NULL,
                                num_runs,
                                n = 100,
                                variance,
@@ -372,111 +371,65 @@ repeat_simulations <- function(crab_setup = NULL,
                                cluster_method) {
 
   ### INPUT CHECKS:
-  # data is a dataframe
-  if (!is.null(data) && !is.data.frame(data)) {
-    stop("Data must be in a dataframe.")}
-
-  # both crab_setup or data is used
-  if (!is.null(crab_setup) && !is.null(data)) {
-    stop("Error: Specify either crab_setup OR data, not both.")}
-
-  # either crab_setup or data is used
-  if (is.null(crab_setup) && is.null(data) && missing(variance)) {
-    stop("Error: You must provide a setup object, a dataset, or a variance to simulate data.")}
-
-  # n is an int
-  if (n %% 1 != 0 || n <= 0) {
-    stop("The number of observations, n, must be a positive integer.")}
-
-  # either variance (for simulate_mvn) or given data is used
-  if (!is.null(crab_setup) && !missing(variance)) {
-    stop("Error: Specify either crab_setup OR variance, not both.")}
-
-  # missing variance and crab_setup
-  if (is.null(crab_setup) && missing(variance)) {
-    stop("Error: You must specify either crab_setup or variance.")}
-
-  # desired_k is an positive int
-  if (desired_k %% 1 != 0 || desired_k < 1) {
-    stop("The desired k value must be a positive integer.")}
-
-  # desired_k is 1
-  if (desired_k == 1) {
-    warning("The desired k value is 1 (one cluster).")}
-
-
-
-  # sub_sample prop is between 0 and 1
-  if (subsample_prop <= 0 || subsample_prop >= 1) {
-    stop("Subsample proportion needs to be between 0 and 1.")}
-
-
-
-  # start seed is a positive int
-  if (start_seed %% 1 != 0 || start_seed < 0) {
-    stop("The seed value must be an integer.")}
-
-
-  ### FUNCTION:
-  # if crab_setup provided, use params
+  # setup object overwrites arguments if provided
   if (!is.null(crab_setup)){
-
-    # check params
-    if (is.null(crab_setup$specified_params)){
-      stop("Error: You have not specified your parameters. Call crab_sim_params() first.")}
-
-    # assign params
-    params <- crab_setup$specified_params
-    num_runs = params$num_runs
-    n = params$n
-    min_k = params$min_k
-    max_k = params$max_k
-    subsample_prop = params$subsample_prop
-    num_subsamples = params$num_subsamples
-    cluster_method = params$cluster_method
-    variance = params$variance
-    desired_k = params$desired_k
-
-    # if no data provided
-    if (is.null(data)){
-      data <- crab_setup$data}}
-
-  # num_runs is a positive int
-  if (num_runs %% 1 != 0 || num_runs < 1) {
-    stop("The number of runs value must be a positive integer.")}
-
-  # num_runs is 1
-  if (num_runs == 1) {
-    warning("The number of runs value is 1.")}
-
-  # min_k is a positive int
+    if (!is.list(crab_setup) || is.null(crab_setup$specified_params)) {
+      stop("crab_setup must be created using the pipeline: crab_prep() |> crab_sim_params().")}
+    
+    # unpack params
+    params         <- crab_setup$specified_params
+    num_runs       <- params$num_runs
+    n              <- params$n
+    min_k          <- params$min_k
+    max_k          <- params$max_k
+    subsample_prop <- params$subsample_prop
+    num_subsamples <- params$num_subsamples
+    cluster_method <- params$cluster_method
+    variance       <- params$variance
+    desired_k      <- params$desired_k
+    
+    # will be null
+    input_data     <- crab_setup$data} 
+  
+  # no setup (also will be null)
+  else {input_data <- NULL}
+  
+  # check variance
+  if (any(variance <= 0)){
+    stop("All variance values must be greater than 0.")}
+  
+  # check min_k
   if (min_k %% 1 != 0 || min_k < 1) {
-    stop("The minimum k value must be a positive integer.")}
-
-  # min_k is 1
-  if (min_k == 1) {
-    warning("The minimum k value is 1 (one cluster).")}
-
-  # min_k < max_k
-  if (min_k >= max_k) {
-    stop("The minimum k value must be less than the maximum k value.")}
-
-  # max_k is a positive int
+    stop("min_k must be a positive integer.")}
+  
+  # check max_k
   if (max_k %% 1 != 0 || max_k < 1) {
-    stop("The maximum k value must be a positive integer.")}
+    stop("max_k must be a positive integer.")}
+  
+  # check min_k < max_k
+  if (min_k >= max_k) {
+    stop("min_k must be less than max_k.")}
+  
+  # min_k = 1
+  if (min_k == 1 || max_k == 1) {
+    warning("At least one of the min_k and max_k values provided is 1 (one cluster).")}
 
-  # max_k is 1
-  if (max_k == 1) {
-    warning("The maximum k value is 1 (one cluster).")}
-
-  #  num_subsamples is a positive int
-  if (num_subsamples <= 0 || num_subsamples %% 1 != 0) {
-    stop("The number of subsamples must be a positive integer.")}
-
-  # clustering method is kmeans
-  if (cluster_method != "kmeans"){
-    stop("Error: Clustering method does not currently work. Please change to 'kmeans'.")}
-
+  # num_runs
+  if (num_runs %% 1 != 0 || num_runs < 1) {
+    stop("num_runs must be a positive integer.")}
+  
+  # subsample_prop
+  if (subsample_prop <= 0 || subsample_prop >= 1) {
+    stop("subsample_prop must be between 0 and 1.")}
+  
+  # nun_subsamples
+  if (num_subsamples %% 1 != 0 || num_subsamples <= 0) {
+    stop("num_subsamples must be a positive integer.")}
+  
+  if (num_subsamples < 5) {
+    warning("A low number of subsamples may lead to unstable CRAB scores.")}
+  
+  ### FUNCTION:
   # initialize results list
   results_list <- list()
   counter <- 1
@@ -484,16 +437,10 @@ repeat_simulations <- function(crab_setup = NULL,
   # loop through variances
   for (var in variance) {
 
-    # variance is greater than 0
-    if (var <= 0) {
-      stop("Variance must be greater than 0.")}
-
-    # simulate data if crab_setup was not provided
-    if (is.null(data)) {
-      sim_data <- simulate_mvn(n = n,
-                               variance = var,
-                               desired_k = desired_k)}
-    else {sim_data <- data}
+    # simulate data
+    sim_data <- simulate_mvn(n = n,
+                             variance = var,
+                             desired_k = desired_k)
 
     # loop through number of runs/reps
     for (i in seq_len(num_runs)) {
@@ -529,8 +476,8 @@ repeat_simulations <- function(crab_setup = NULL,
 crab_prep <- function(data){
 
   ### INPUT CHECKS:
-  if (!is.data.frame(data)) {
-    stop("Data must be in a dataframe.")}
+  if (!is.null(data) && !is.data.frame(data)) {
+    stop("Data must be either NULL (simulation) or a dataframe.")}
 
   ### FUNCTION:
   # grab all columns, leave user choices NULL

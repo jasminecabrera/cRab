@@ -37,7 +37,6 @@ library(tidymodels)
 library(foreach)
 library(doParallel)
 library(MASS)
-library(gt)
 
 doParallel::registerDoParallel(cores = detectCores() - 5)
 penguins_data <- penguins
@@ -667,13 +666,14 @@ accessible.
 
 
 ## Functional Pipeline:
-The architecture of the cRab package is built on a non-destructive, state-carrying 
-workflow. Unlike traditional R functions that return immediate transformations of
-data, cRab employs a system, illustrated in Figure 3.1 that deconstructs the analysis 
-into three logical stages: Initialization, Configuration, and Execution. This design 
-allows users to make intentional decisions and review the workflow as it progresses, 
-ensuring that metadata is preserved and can be validated throughout the entirety 
-of the analysis. 
+The architecture of the cRab package leverages a non-destructive, state-carrying 
+workflow. Unlike traditional R functions that return immediate transformations of 
+data, cRab employs a system that deconstructs the analysis into three logical stages: 
+Initialization, Configuration, and Execution (Figure 3.1). This design allows users 
+to make intentional decisions and review the workflow as it progresses, ensuring 
+that metadata is preserved and can be validated throughout the entirety of the 
+analysis. 
+
 
 ```{r}
 #| label: workflow diagram
@@ -684,14 +684,15 @@ knitr::include_graphics("../images/workflow.png")
 ```
 
 ### Stage I: Initialization
-At the heart of the pipeline is the crab_prep object, which is the backbone and 
-serves as the single source of truth for the entire validation process. When a 
-user initializes the workflow, the package creates a metadata-rich list that captures 
-the raw data alongside a set of “empty slots” reserved for subsequent variables 
-selections and hyperparameters. By carrying the state within this object, cRab 
-facilitates a precomputation phase where the data structure can be analyzed and 
-stored. This allows for later stages of the pipeline to remain computationally 
-efficient and internally consistent.
+At the heart of the pipeline is the crab_prep object, which serves as the backbone 
+and the single source of truth for the entire validation process. Upon initialization 
+of the workflow, the package generates a metadata-rich list that captures the raw 
+data alongside a set of empty slots reserved for subsequent variable selections 
+and hyperparameters. By carrying the state within this object, cRab facilitates a 
+precomputation phase where the data structure can be analyzed and stored. This 
+allows for later stages of the pipeline to remain computationally efficient and 
+internally consistent.
+
 
 ```{r}
 #| label: crab_prep example
@@ -713,12 +714,11 @@ knitr::include_graphics("../images/crab_prep_output.png")
 ### Stage II: Configuration
 Following the initialization, the pipeline enters the Configuration Stage. To 
 maximize flexibility and readability, cRab deconstructs the requirements into two 
-modular functions: crab_cols() and crab_params().
+modular functions: crab_cols() and crab_params(). The first function, crab_cols(), 
+manages variable selection, allowing the user to define which features contribute 
+to the distance metrics and cluster validation. This function populates the 
+specified_cols element within the crab_prep object (Figure 3.2).
 
-The first function, crab_cols(), manages variable selection, allowing the user to 
-define which features contribute to the distance metrics and cluster validation. 
-By filling in the desired columns, the crab_prep() object's specified_cols element 
-is updated, as shown in Figure 3.2.
 
 ```{r}
 #| label: crab_cols example
@@ -738,8 +738,8 @@ knitr::include_graphics("../images/crab_col_output.png")
 ```
 
 Complementing this, crab_params() defines the hyperparameters required for the 
-“Buddies” and "Rivals" logic, such as subsampling rates or iteration counts. This 
-function updates the specified_params element of the crab_prep object (Figure 3.3).
+Buddies and Rivals logic, such as subsampling rates or iteration counts. This step 
+updates the specified_params element. (Figure 3.3).
 
 ```{r}
 #| label: crab_params example
@@ -760,11 +760,13 @@ knitr::include_graphics("../images/crab_params_output.png")
 ```
 
 As shown in Figure 3.5, these two functions are both order-independent and idempotent. 
-As a result, a researcher can call crab_cols() after crab_params() or vice versa, 
-or overwrite previous specifications without compromising the object’s integrity. 
+Consequently, a researcher can call crab_cols() after crab_params(), or vice versa, 
+and overwrite previous specifications without compromising the object’s integrity. 
 Each call updates a specific slot within the crab_prep() metadata list without altering 
-the original data. This emulates the recipe style of tidymodels ecosystem, where 
-instructions are layered onto an object but not yet “baked” into the final result.
+the original data. This design emulates the recipe style of tidymodels ecosystem, 
+where instructions are layered onto an object without “baking” them into the final 
+result.
+
 
 ```{r}
 #| label: configuration example
@@ -793,13 +795,24 @@ iris |>
 knitr::include_graphics("../images/configuration_output.png")
 ```
 
+To ensure the integrity of the crab_prep object before it reaches the computationally 
+intensive Execution Stage, cRab implements a rigorous validation layer. Every function 
+within the pipeline begins with an input check to verify that the object contains 
+the necessary metadata and valid data types. Beyond simple data type checking, the 
+package also utilizes educational warnings to guide the user. For instance, if a user 
+specifies $k = 1$, a scenario that is mathematically trivial for clustering stability, 
+the package does not trigger a hard stop error. Instead, it issues a guided warning 
+that explains why $k=1$ is statistically non-informative. This approach steers the 
+user toward more robust and intentional practices while keeping the code’s momentum.
+
+
 ### Stage III: Execution
-The transition from a “specification” to a “result” occurs only during the Execution 
-Stage via the crab_bake() function. At this stage, the package reconciles the 
-stored metadata and applies the configured logic to the raw data. This function 
-handles the “heavy lifting” by performing the iterative subsampling and calculation 
-of the final CRAB scores. The output is a dataframe, providing a clear and 
-reproducible summary of the cluster validation.
+The transition from a specification to a result occurs exclusively during the 
+Execution Stage via crab_bake(). At this point, the package reconciles the stored 
+metadata and applies the configured logic to the raw data. This function handles 
+the “heavy lifting” by performing the iterative subsampling and calculation of 
+the final CRAB scores. The process outputs a tidy dataframe, providing a clear 
+and reproducible summary of the cluster validation.
 
 ```{r}
 #| label: execution example
@@ -847,7 +860,7 @@ significant memory overhead, as each core calls for a copy of the global environ
 To mitigate the risk of system instability, the package by default, implements a 
 conservative core-reservation policy where 
 $$
-\text{Cores}_{Active} = \text{max}(1, \text{detectCores()}-5)
+\text{Cores}_\text{Active} = \text{max}(1, \text{detectCores()}-5)
 $$
 
 By reserving a subset of cores for background system processes, the package prevents 
@@ -874,10 +887,65 @@ datasets to be processed on standard hardware without comprising the mathematica
 rigor behind the CRAB score.
 
 
+## Synthetic Data Generation
+
+While cRab is designed to validate clusters in real-world datasets, evaluating the
+package’s sensitivity can be done with a controlled dataset where the ground truth 
+of the cluster structure is known. To facilitate this, the package includes simulate_mvn(), 
+a utility designed to generate synthetic data from Multivariate Normal (MVN) distributions. 
+This internal framework allows users to benchmark the CRAB score against datasets 
+with mathematically defined properties before applying the tool to ambiguous, and 
+unlabeled data.
+
+We intentionally chose MVN distributions because they offer precise control over 
+cluster separation, orientation, and density. By utilizing MVN distributions, cRab 
+simulates various degrees of cluster overlap, and geometric tilting (covariance). 
+This allows the user to test the CRAB score’s ability to identify instability as 
+clusters converge and diverge.
+
+The simulate_mvn() function constructs a covariance matrix based on the constraints 
+defined by the user. This function requires three primary inputs: the number of 
+observations $n$, the variance, and the desired number of clusters. The variance 
+is used to construct the covariance matrix. By increasing the variance, the user 
+can purposely move clusters closer together. 
+
+```{r}
+#| label: simulate_mvn() example
+#| echo: false # Use to hide code but not results
+#| fig-cap: "Synthetic Data Generated from simulate_mvn()"
+
+data <- simulate_mvn(n = 150, variance = 0.2, desired_k = 3)
+
+data |>
+  ggplot(aes(x = X1, y = X2)) +
+  geom_point() +
+  labs(x = "X1",
+       y = "X2",
+       title = "Synthetic Data Generated from simulate_mvn()",
+       subtitle = "Parameters: n = 150, variance = 0.2, desired number of clusters = 3") +
+  theme_bw()
+```
+
+A key feature of simulate_mvn() is its compatibility with the main functional pipeline. 
+The workflow treats the synthetic data with the same logic as real-world data, 
+allowing for a seamless transition from simulation to analysis. When paired with 
+repeated_simulations(), the package applies the CRAB algorithm to a specified number 
+of datasets with identical parameter constraints.
+
+```{r}
+data |>
+  crab_prep() |>
+  crab_cols(c("X1", "X2")) |>
+  crab_params(min_k = 2, max_k = 5, num_subsamples = 10,
+              cluster_method = "kmeans") |>
+  crab_bake()
 
 
-
-
+# fix 
+```
+[insert simulation workflow]
+Chapter 4 provides more insight into the specific performance results of these 
+simulations.
 
 
 
