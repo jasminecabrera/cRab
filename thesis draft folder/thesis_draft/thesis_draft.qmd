@@ -48,22 +48,21 @@ source("functions.R/functions.R")
 
 ## Motivation
 Unsupervised learning is a type of machine learning where data is unlabeled 
-and the true target variable is unknown. It is commonly used to identify groups 
+and the true target variable is unknown. Practitioners often use it to identify groups 
 of observations, reduce dimensionality, or detect anomalies within data. While 
-these methods can reveal meaningful structure in data, they are inherently difficult
-to evaluate because there is no ground truth to compare against, unlike in 
-supervised learning.
+these methods can reveal meaningful structure in data, evaluating their results is
+inherently difficult because no ground truth exists, unlike in supervised learning.
 
-A widely used approach within unsupervised learning is K-means, a type of clustering 
-algorithm. This algorithm initializes $k$ centroids in the data space and assigns
-each point to the nearest centroid based on Euclidean distance. The centroids are then 
-updated as the mean of their assigned points and this process is repeated 
-until the cluster assignments stabilize. Despite its simplicity, K-means has notable
-limitations. One flaw is the final clustering depends heavily on the initial placements
-of the centroids (Jaeger), which can lead to inconsistent or suboptimal results.
-Additionally, the use of Euclidean distance assumes that the clusters 
-themselves are roughly spherical, an assumption that often fails for real-world 
-data.
+Clustering is the most widely recognized form of unsupervised learning, with 
+K-means being one of its most commonly used algorithms. K-means starts by initializing
+$k$ centroids in the data space and assigns each point to the nearest centroid based 
+on Euclidean distance. It then updates the centroids as the mean of their assigned 
+points and repeats this process until the cluster assignments stabilize. Despite 
+its simplicity, K-means has notable limitations. One flaw is the final clustering 
+depends heavily on the initial placements of the centroids (Jaeger), which can 
+lead to inconsistent or suboptimal results. Additionally, the use of Euclidean 
+distance assumes that the clusters themselves are roughly spherical, an assumption 
+that often fails for real-world data.
 
 A major challenge in clustering as a whole is determining the appropriate number 
 of clusters. Without prior knowledge, this choice can significantly affect the 
@@ -72,13 +71,13 @@ commonly used techniques are the Elbow Method and the Silhouette Score.
 
 ## Current Methods
 The Elbow Method is a visual approach that evaluates clustering by calculating the
-within-cluster sum of squares (WCSS). This measures the sum of squared Euclidean 
+within-cluster sum of squares (WCSS). This measure sums the squared Euclidean 
 distances between each point and its assigned cluster centroid for different 
 values of $k$. As the number of clusters increases, the WCSS naturally decreases 
-because smaller clusters reduce within-cluster variation. The optimal number of
-clusters is typically identified at the point where the decrease in WCSS slows 
-dramatically and begins to level off, forming what is known as the "elbow". The 
-value of $k$ just before this plateau is then chosen as the correct number of clusters.
+because smaller clusters reduce within-cluster variation. Analysts typically identify
+the optimal number of clusters at the point where the decrease in WCSS slows 
+dramatically and begins to level off, forming what is known as the "elbow". They 
+then choose the value of $k$ just before this plateau as the correct number of clusters.
 Although this method works well when the elbow is clearly visible, it does not always
 provide a clear answer (Kodinariya). 
 
@@ -164,8 +163,8 @@ elbow_df |>
 ```
 Figure 1.1 illustrates a case where WCSS decreases gradually for all values of $k$, 
 making it difficult to identify a distinct elbow. Without a clear plateau to guide 
-the decision, selecting the optimal number of clusters becomes subjective and can 
-lead to very different results depending on the value of $k$ that is chosen.
+the decision, users must select the optimal number of clusters subjectively, which can 
+produce very different results depending on the chosen value of $k$.
 
 In contrast to the Elbow Method, the Silhouette Score provides a more quantitative
 approach by removing the subjectivity of visual interpretation. Instead of relying 
@@ -288,22 +287,22 @@ stems from the idea that a clustering into $k$ groups captures the inherent stru
 if similar cluster assignments are obtained across various subsamples of the data. 
 To assess this, the method repeatedly clusters subsets of the data using a hierarchical 
 clustering method and compares the consistency of assignments between observations 
-found in both subsets. Similarity between clusters is measured using cosine similarity, 
-producing a distribution of similarity scores for each value of $k$. When a true 
-underlying structure exists, these scores remain consistently high and concentrated 
+found in both subsets. This method measures similarity between clusters using cosine 
+similarity, producing a distribution of similarity scores for each value of $k$. When 
+a true underlying structure exists, these scores remain consistently high and concentrated 
 near 1, indicating that the clustering is stable across perturbations of the data.
 
-## cRab Score
-Building on this idea, the cRab algorithm evaluates clustering quality through 
+## CRAB Algorithm
+Building on this idea, the CRAB algorithm evaluates clustering quality through 
 stability rather than relying on assumptions about cluster shape or separation. 
-By repeatedly subsampling and reclustering the data, it measures how consistent 
-cluster assignments of pairwise observations are across different samples. This 
-shifts the focus from how the clusters look visually to whether they are 
-reproducible, providing stronger evidence that the identified groupings are meaningful. 
+It repeatedly subsamples and reclusters the data to measure how consistently pairwise
+observations are assigned to the same cluster across different samples. This 
+approach shifts the focus from how the clusters look visually to their reproducibility, 
+providing stronger evidence that the identified groupings are meaningful. 
 
-Unlike the Elbow Method and Silhouette Score, the cRab score makes no assumptions
+Unlike the Elbow Method and Silhouette Score, the CRAB algorithm makes no assumptions
 about the data or group structure, allowing it to better capture more complex and 
-irregular patterns. Additionally, the use of a global minimum provides a clear 
+irregular patterns. Additionally, its use of a global minimum provides a clear 
 and objective selection criterion, avoiding the ambiguity of visual interpretation 
 and the bias toward compact clusters. Although this approach may require additional 
 computation due to repeated sampling, it offers a more reliable way to determine 
@@ -323,18 +322,22 @@ real and simulated data.
 
 
 
+
+
+
+
 # Properties and Details
 ## Overview
-The cRab algorithm, which stands for Clustering Rivals and Buddies, is designed 
+The CRAB algorithm, which stands for Clustering Rivals and Buddies, is designed 
 to evaluate clustering performance by examining how consistently points are 
 grouped together across multiple subsamples of the data. Unlike traditional 
-methods that rely on assumptions about cluster shape, size, or separation, cRab 
-emphasizes reproducibility, providing a more robust measure. At its core, cRab 
+methods that rely on assumptions about cluster shape, size, or separation, CRAB 
+emphasizes reproducibility, providing a more robust measure. At its core, CRAB 
 focuses on pairwise relationships between observations. By tracking how often two 
 points end up in the same cluster across repeated resampling, the algorithm 
 quantifies the stability of cluster assignments. This approach allows it to handle 
 irregular clusters that would challenge methods such as the Elbow Method and
-Silhouette Score. The output is a single metric, the cRab score, which provides 
+Silhouette Score. The output is a single metric, the CRAB score, which provides 
 a clear answer for selecting the most appropriate number of clusters while 
 minimizing subjectivity.
 
@@ -344,33 +347,34 @@ minimizing subjectivity.
 #| label: CRAB Algorithm 
 #| echo: false # Use to hide code but not results
 #| fig-cap: "CRAB Algorithm"
-knitr::include_graphics("../images/crab_alg.png")
+knitr::include_graphics("../images/crab_algorithm.png")
 ```
 
 ## Preparing the Data
-At the start of the algorithm, missing observations are removed and the desired 
-features are standardized. Standardization ensures that variables with different 
-scales do not disproportionately influence the clustering outcome, which is 
-especially important for distance-based methods like K-means.
+Before applying the CRAB algorithm, ensure that the dataset is preprocessed appropriately
+for the chosen clustering method. For example, if using K-means, this may include
+handling missing values and standardizing features so that the variables on different
+scales do not disproportionately influence the clustering algorithm.
 
-The cRab algorithm requires three main inputs:
+The CRAB algorithm requires three main inputs:
 
-- Subsample Proportion $f$: the fraction of the dataset included in each resample
+- **Subsample Proportion ($f$):** Fraction of the dataset to use for each resample
 
-- Number of resamples $r$: how many times the data will be subsampled and clustered
+- **Number of resamples ($r$):** Number of resamples to generate (i.e. number of 
+times the data will be subsampled)
 
-- Range of $k$ values: the different cluster counts to evaluate
+- **Range of $k$ values:** The different cluster counts to evaluate
 
-For each resample, a random subset of the data containing $f$ proportion of the 
-observations is drawn. K-means is then applied to assign cluster labels to each 
-point. By repeating this process across multiple resamples, the algorithm can 
-detect which cluster assignments are consistently reproduced, instead of placing 
+For each resample, CRAB draws a random subset of the data containing $f$ proportion of the 
+observations and applies the chosen clustering method (i.e. K-means) to assign cluster 
+labels to each point. By repeating this process across multiple resamples, the algorithm 
+detects which cluster assignments are consistently reproduced, instead of placing 
 confidence on any single clustering of the full dataset.
 
 ## Buddies Matrix
-After clustering each resample, a Buddies Matrix, $B$, is constructed to track pairwise 
-relationships between observations. This is an $n$ x $n$ matrix where the entry
-$(i,j)$ encodes whether points $i$ and $j$ were assigned to the same cluster:
+After clustering each resample, CRAB constructs a Buddies Matrix, $B$, to track 
+pairwise relationships between observations. This $n \times n$ matrix encodes whether 
+points $i$ and $j$ were assigned to the same cluster:
 
 $$
 B_{i,j} =
@@ -381,14 +385,17 @@ B_{i,j} =
 \end{cases}
 $$
 
-To reduce computation and take advantage of symmetry, the diagonal and lower 
-triangle of the matrix are set to NA. Each resample produces one Buddies Matrix, 
-resulting in $r$ matrices in total. Collectively, these matrices capture the 
-variability of pairwise relationships across resamples, forming the foundation 
-for measuring clustering stability.
+To reduce computation and take advantage of symmetry, CRAB sets the diagonal and lower 
+triangle of each Buddies Matrix to NA. Each resample produces one Buddies Matrix, 
+resulting in $r$ matrices in total. Collectively, these matrices capture how pairwise
+relationships vary across resamples, forming the foundation for measuring cluster
+stability. Ideally, each pair of observations ($i, j$) should consistently have
+either 1s (always assigned to the same cluster) or -1s (always assigned to different
+clusters) across resamples. Pairs that switch between 1 and -1 indicate instability
+in the clustering assignments.
 
 For example, Figure 2.1 shows a random sample from a mock dataset clustered using 
-K-means. The five labeled points illustrate all possible scenarios where Observations 
+K-means. The five labeled points illustrate all possible scenarios: Observations 
 1 and 3 belong in different clusters, while Observations 4 and 5 are in the same 
 cluster. Observation 2, although part of the original dataset, was not included
 in this particular sample.
@@ -412,19 +419,18 @@ knitr::include_graphics("../images/buddies_matrix.png")
 
 
 ## Mean Matrix
-The Buddies Matrices are then aggregated to form the Mean Matrix, which summarizes 
+The algorithm aggregates the Buddies Matricies to form the Mean Matrix, which summarizes 
 the overall stability of pairwise cluster assignments. For each entry $(i,j)$, 
-the algorithm first counts the number of resamples where both points were included. 
-It then sums the corresponding entries from the Buddies Matrices across those 
-resamples, and divides by the number of comparisons to obtain the mean. The resulting 
-entries are values between -1 and 1 that reflect how consistently the pair of 
-points is clustered together across resamples. Values closer to -1 suggest 
-that the points are often placed in different clusters, while values closer to 1 
-suggest that the points are frequently assigned to the same cluster. Entries near 
-0 indicate inconsistent or ambiguous pairwise assignments. The Mean Matrix acts 
-as a stability map, revealing which relationships are robust across different 
-subsamples of the data. Figure 2.3 is a visual diagram of how the Mean Matrix is 
-constructed using the Buddies Matrices.
+it first counts the number of resamples where both points were included. 
+It then sums the corresponding entries from thpse Buddies Matrices and divides by 
+the number of comparisons to obtain the mean. Each entry ranges from -1 and 1, 
+reflecting how consistently the pair of points clusters together across resamples. 
+Values closer to -1 suggest that the points are often placed in different clusters, 
+while values closer to 1 indicate that the points are frequently assigned to the 
+same cluster. Entries near 0 indicate inconsistent or ambiguous pairwise assignments. 
+The Mean Matrix acts as a stability map, revealing which relationships remain robust
+across different subsamples of the data. Figure 2.3 visualy demonstrates how the
+algorithm constructs the Mean Matrix from the Buddies Matrices.
 
 ```{r, out.width='100%', out.height='auto'}
 #| label: Mean Matrix Example 
@@ -435,30 +441,42 @@ knitr::include_graphics("../images/mean_matrix.png")
 
 
 ## Similarity Score
-To summarize the information in the Mean Matrix, the cRab score is calculated. All
-entries of the matrix are vectorized, their absolute values are taken, and the 
-mean of the squared distances from 1 is computed. Scores close to 0 indicate that 
-points are consistently grouped together across all subsamples, suggesting highly
-reproducible clusters. In contrast, higher scores denote greater instability, 
-signaling that cluster assignments vary significantly depending on the subsample.
-This score condenses these various pairwise relationships into a single metric 
-that can be compared across different values of $k$.
+To summarize the information in the Mean Matrix, the CRAB score quanitifes cluster
+stability. Let $M$ represent the Mean Matrix with entries $M_{i,j}$ for each pair
+of observations. The CRAB score is defined as:
+$$
+\text{CRAB Score} = \frac{1}{|V|}\sum_{(i,j)\in V}(1 - |M_{i,j}|)^2
+$$
+Where:
+
++ $V$ is the set of all valid entries in the vectorized Mean Matrix (i.e. all
+pairs that are not NA)
+
++ $|V|$ is the number of valid entries
+
++ $M_{i,j}$ is the Mean Matrix entry for the $i, j$ pair
+
+Scores close to 0 indicate that points consistently group together across all subsamples, 
+suggesting highly reproducible clusters. In contrast, higher scores denote greater 
+instability, signaling that cluster assignments vary significantly depending on the 
+subsample. The CRAB score condenses these various pairwise relationships into a single 
+metric that can be compared across different values of $k$.
 
 
-## cRab Performance
-By plotting the cRab scores across different values of $k$, the algorithm identifies 
+## CRAB Performance
+By computing the CRAB scores across different values of $k$, the algorithm identifies 
 the most stable clustering as the one with the lowest score. This provides an 
-objective criterion for selecting the number of clusters. In many cases, the 
-optimal value appears as a “pinching point” in the plot, where the score decreases 
-before rising again for larger $k$ values. 
+objective criterion for selecting the number of clusters. In many cases, when
+visualized across increasing $k$, the optimal value appears as a “pinching point” 
+in the plot, where the score decreases before rising again for larger $k$ values. 
 
-To illustrate the performance of cRab, the well-known Palmer Penguins dataset 
-serves as an effective benchmark. This dataset is particularly useful because it 
+To illustrate the performance of CRAB, we use the well-known Palmer Penguins dataset (cite)
+as an effective benchmark. This dataset is particularly useful because it 
 contains a true class label, species, allowing for direct comparison between 
 identified clusters and the actual groupings. There are three unique species along 
 with several physical measurements, such as bill length, bill depth, and flipper 
-length. For this analysis, flipper length and bill length are selected, as these 
-features provide strong separation between species with minimal overlap across observations.
+length. For this analysis, we select flipper length and bill length, as these 
+features provide strong separation between species with minimal overlap among observations.
 
 ```{r}
 #| label: penguins data
@@ -582,11 +600,11 @@ ss_results_p |>
        y = "")
 ```
 
-In contrast, the cRab Score correctly identifies three clusters as the optimal 
+In contrast, the CRAB Score correctly identifies three clusters as the optimal 
 solution with a score of 0.0048. The next lowest score occurs at $k$ = 2, which 
-is consistent with the alternative methods. Although the “pinching point” is less 
-visually pronounced in this example, the local minimum at $k$ = 3 provides a clear 
-and objective indication of the suggested number of groupings. More importantly, 
+is consistent with the alternative methods. Although the “pinching point” appears
+less visually pronounced in this example, the local minimum at $k$ = 3 provides a 
+clear and objective indication of the suggested number of groupings. More importantly, 
 this result aligns with the known structure of the dataset, as defined by the 
 species label.
 
@@ -598,7 +616,7 @@ peng_example <- read_csv(here::here("thesis draft folder", "csv", "peng_ex.csv")
 ```{r, out.width='100%', out.height='auto'}
 #| label: penguins crab table
 #| echo: false # Use to hide code but not results
-#| tbl-cap: "cRab Performance on Palmers Penguins Table Line Graph"
+#| tbl-cap: "CRAB Performance on Palmers Penguins Table Line Graph"
 
 library(kableExtra)
 
@@ -612,7 +630,7 @@ peng_example |>
 ```{r}
 #| label: penguins crab graph
 #| echo: false # Use to hide code but not results
-#| fig-cap: "cRab Performance on Palmers Penguins Data"
+#| fig-cap: "CRAB Performance on Palmers Penguins Data"
 
 peng_example |>
   ggplot(aes(x = k, y = Score)) +
@@ -620,59 +638,65 @@ peng_example |>
   geom_point() +
   labs(x = "Cluster Value (k)",
        y = "",
-       title = "cRab Score Across Cluster k Values")
+       title = "CRAB Score Across Cluster k Values")
   
 ```
 
 Chapter 4 goes more into depth through a series of simulations that demonstrate 
-cRab's performance across various datasets, highlighting its ability to identify 
-the true structure of the data. Boxplots and other visualizations are used to 
-illustrate how cRab performs.
+CRAB's performance across various datasets, highlighting its ability to identify 
+the true structure of the data. The chapter uses boxplots and other visualizations 
+to illustrate how CRAB performs.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # The cRab Package in R
 
 ## Package Goal
-The primary objective of the cRab package is to provide a reliable, automated 
-framework for calculating the CRAB score within the R language. We focused on a 
-tidy and efficient implementation that aligns seamlessly with the tools and workflows 
-R users already employ. By formalizing this process into an accessible package, 
-cRab offers a rigorous yet intuitive toolkit for validating cluster structures 
-without the need for complex, custom syntax.
+After introducing the CRAB algorithm and outlining its step-by-step logic, we now 
+turn to its practical implementation in R. The cRab package provides a reliable, automated 
+framework for calculating the CRAB score. It emphasizes a tidy and efficient workflow 
+that aligns seamlessly with the tools and conventions R users already rely on. By 
+formalizing this process into an accessible package, cRab offers a rigorous yet 
+intuitive toolkit for validating cluster structures without the need for complex, 
+or custom syntax.
 
 
 ## Design Philosophy and Ecosystem Integration
-The cRab package is developed as a specialized extension of the tidyclust ecosystem 
-(cite). By mirroring the foundational principles of the tidymodels (cite) framework, 
-the package treats clustering as an integrated phase of a machine learning workflow 
-rather than a standalone procedure. This architectural choice allows the package 
-to remain familiar to modern data scientists by relying exclusively on standard R 
-objects like tibbles and parsnip-style models. By adopting this “recipe” style of 
-modularity, cRab fits into existing data pipelines without requiring users to learn 
-or implement particular data formats.
+The cRab package extends the tidyclust ecosystem (cite) and builds on the core
+principles of the tidymodels (cite) framework. It treats clustering as an integrated 
+step of a machine learning workflow rather than a standalone procedure. This architectural 
+choice keeps the package familiar to modern data scientists by relying exclusively 
+on standard R objects like tibbles and parsnip-style models. By adopting this “recipe” 
+style, cRab fits directly into existing data pipelines without requiring users to 
+learn new data formats.
 
-The core logic of cRab is built around the native R pipe (|>) (cite), which 
-establishes a baseline requirement of R Version 4.1. While this introduces a specific 
-version constraint, it prioritizes the long-term stability and readability of the 
-codebase. By utilizing the native pipe, the package reduces external dependencies, 
-such as the magrittr package (cite) which houses the magrittr pipe (%>%), resulting 
-in a lighter installation footprint and more transparent error logs during debugging. 
-This modern approach ensures that the syntax remains intuitive and sustainable as 
-the R language continues to evolve.
+The core logic of cRab uses the native R pipe (|>) (cite), which establishes a baseline 
+requirement of R Version 4.1. While this introduces a specific version constraint, 
+it prioritizes the long-term stability and readability of the codebase. By utilizing 
+the native pipe, the package reduces external dependencies, such as the magrittr 
+package (cite) which houses the magrittr operator (%>%). As a result, the package
+maintains a lighter installation footprint and produces more transparent error 
+messages during debugging. Together, these design choices promote consistent and
+easy to follow syntax as the R language continues to evolve.
 
-The resulting user experience is both intentional and predictable. Rather than 
-relying on a single, complex function call, cRab deconstructs the analysis into 
-a structured progression. This naturally guides the user from raw data to a finalized similarity score while providing a structured environment that is both robust and 
-accessible.
-
-
-## Functional Pipeline:
-The architecture of the cRab package leverages a non-destructive, state-carrying 
-workflow. Unlike traditional R functions that return immediate transformations of 
-data, cRab employs a system that deconstructs the analysis into three logical stages: 
-Initialization, Configuration, and Execution (Figure 3.1). This design allows users 
-to make intentional decisions and review the workflow as it progresses, ensuring 
-that metadata is preserved and can be validated throughout the entirety of the 
-analysis. 
+## Functional Pipeline
+The cRab package architecture leverages a workflow that preserves the original data
+and builds a working object that updates as the analysis progresses. Unlike traditional 
+R functions that return immediate transformations of data, cRab employs a system 
+that structures the analysis into three logical phases: Initialization, Configuration, 
+and Execution (Figure 3.1). 
 
 
 ```{r}
@@ -683,16 +707,15 @@ analysis.
 knitr::include_graphics("../images/workflow.png")
 ```
 
-### Stage I: Initialization
-At the heart of the pipeline is the crab_prep object, which serves as the backbone 
-and the single source of truth for the entire validation process. Upon initialization 
-of the workflow, the package generates a metadata-rich list that captures the raw 
-data alongside a set of empty slots reserved for subsequent variable selections 
-and hyperparameters. By carrying the state within this object, cRab facilitates a 
-precomputation phase where the data structure can be analyzed and stored. This 
-allows for later stages of the pipeline to remain computationally efficient and 
-internally consistent.
-
+### Phase I: Initialization
+The pipeline begins with the crab_prep object, which serves as the central container 
+for the entire validation process. Upon initialization, the package 
+generates a metadata-rich list that stores the raw data alongside a set of empty 
+slots reserved for variable selection and hyperparameters. By storing information 
+within this object, cRab facilitates a precomputation phase where it evaluates and 
+records the structure of the data. This setup keeps later stages of the pipeline 
+computationally efficient and consistent by avoiding repeated computation 
+of the same information.
 
 ```{r}
 #| label: crab_prep example
@@ -711,12 +734,12 @@ knitr::include_graphics("../images/crab_prep_output.png")
 ```
 
 
-### Stage II: Configuration
-Following the initialization, the pipeline enters the Configuration Stage. To 
-maximize flexibility and readability, cRab deconstructs the requirements into two 
+### Phase II: Configuration
+After initialization, the workflow enters the Configuration Stage. To 
+improve flexibility and readability, cRab splits configuration into two 
 modular functions: crab_cols() and crab_params(). The first function, crab_cols(), 
 manages variable selection, allowing the user to define which features contribute 
-to the distance metrics and cluster validation. This function populates the 
+to distance metrics and clustering stability. It populates these choices in the 
 specified_cols element within the crab_prep object (Figure 3.3).
 
 
@@ -738,8 +761,8 @@ knitr::include_graphics("../images/crab_col_output.png")
 ```
 
 Complementing this, crab_params() defines the hyperparameters required for the 
-Buddies and Rivals logic, such as subsampling rates or iteration counts. This step 
-updates the specified_params element (Figure 3.4).
+Buddies and Rivals logic, including subsampling rates and number of iterations.
+This step updates the specified_params slot (Figure 3.4).
 
 ```{r}
 #| label: crab_params example
@@ -759,12 +782,11 @@ iris |>
 knitr::include_graphics("../images/crab_params_output.png")
 ```
 
-These two functions are both order-independent. Consequently, a researcher can 
-call crab_cols() after crab_params(), or vice versa, and overwrite previous specifications 
-without compromising the object’s integrity. Each call updates a specific slot 
-within the crab_prep metadata list without altering the original data. This design 
-emulates the recipe style of tidymodels ecosystem, where instructions are layered 
-onto an object without “baking” them into the final result.
+These two functions operate independently and in any order. As a result, a researcher 
+can call crab_cols() before or after crab_params(), and they can overwrite previous 
+settings without affecting the underlying data. Each call updates only its 
+designated slot within the crab_prep object, which keeps the workflow modular and 
+transparent.
 
 ```{r}
 #| label: configuration example
@@ -793,24 +815,23 @@ iris |>
 knitr::include_graphics("../images/configuration_output.png")
 ```
 
-To ensure the integrity of the crab_prep object before it reaches the computationally 
-intensive Execution Stage, cRab implements a rigorous validation layer. Every function 
-within the pipeline begins with an input check to verify that the object contains 
-the necessary metadata and valid data types. Beyond simple data type checking, the 
-package also utilizes educational warnings to guide the user. For instance, if a user 
-specifies $k = 1$, a scenario that is mathematically trivial for clustering stability, 
-the package does not trigger a hard stop error. Instead, it issues a guided warning 
-that explains why $k=1$ is statistically non-informative. This approach steers the 
-user toward more robust and intentional practices while keeping the code’s momentum.
+Before moving to the computationally intensive Execution phase, cRab implements a 
+rigorous validation layer. Each function checks that the input object contains the 
+required metadata and valid data types. The package also provides educational warnings 
+to support correct usage. For instance, if a user sets $k = 1$, a scenario that is 
+mathematically trivial for clustering stability, the package does not stop the execution
+with an error. Instead, it issues a warning that $k=1$ does not produce meaningful
+cluster results. This approach encourages mroe informed choices while maintaining 
+workflow continuity.
 
 
-### Stage III: Execution
-The transition from a specification to a result occurs exclusively during the 
-Execution Stage via crab_bake(). At this point, the package reconciles the stored 
-metadata and applies the configured logic to the raw data. This function handles 
-the “heavy lifting” by performing the iterative subsampling and calculation of 
-the final CRAB scores. The process outputs a tidy dataframe, providing a clear 
-and reproducible summary of the cluster validation.
+### Phase III: Execution
+The workflow transitions from specifications to results exclusively during the 
+Execution Stage via crab_bake(). At this phase, the function reconciles the stored 
+metadata and applies the configured logic to the raw data. It undoubtedly handles 
+the heavy lifting by performing iterative subsampling and calculation of the final 
+CRAB scores. These computations return a tidy data frame that summarizes cluster
+stability in a clear and reproducible format.
 
 ```{r}
 #| label: execution example
@@ -844,64 +865,58 @@ iris_example |>
 
 ## Computational Strategy and Resource Management
 
-Due to the Buddies Matrices' $n \times n$ structure within the cRab pipeline, as the volume 
-of the data increases, the computational cost of cluster validation grows non-linearly. 
-To ensure that the package is able to perform well across different local machines, 
-it maximizes throughput via managed parallelism and minimizes the memory footprint 
-of its core data structures.
+The cRab pipeline relies on Buddies Matrices with an $n \times n$ structure, which
+causes the computational cost of cluster validation to grow quadratically as the dataset
+size increases. To maintain performance across different machines, the package maximizes
+throughput through parallelism while limiting memory usage in its core data structures.
 
-To accelerate the iterative Buddies and Rivals logic, cRab utilizes the doParallel 
-and foreach libraries. While parallelization significantly reduces the total execution 
-time by distributing iterations across multiple CPU cores, it also introduces a 
-significant memory overhead, as each core calls for a copy of the global environment.
+To accelerate the iterative Buddies and Rivals computations, cRab utilizes the doParallel 
+and foreach libraries. Parallelization significantly reduces the total execution 
+time by distributing iterations across multiple CPU cores, but consequently also
+increases memory usage since each core requires a copy of the global environment.
 
-To mitigate the risk of system instability, the package by default, implements a 
-conservative core-reservation policy where 
+To prevent system overload, the package applies a conservative core reservation
+strategy by default:
+
 $$
 \text{Cores}_\text{Active} = \text{max}(1, \text{detectCores()}-5)
 $$
 
-By reserving a subset of cores for background system processes, the package prevents 
-the local machine from being overwhelmed and needing to be restarted. This design 
-choice allows the researcher to continue other tasks while the execution stage 
-remains active in the background.
+By reserving several cores for background processes, the system remains responsive
+during execution.
 
-As previously mentioned, the primary computational bottleneck in cRab is the 
-construction of the Buddies Matrix. This process operates at a complexity of $O(n^2)$
-where $n$ represents the number of observations in the subsample. As $n$ grows, the 
-memory required to store pairwise relationships can exceed the available Random 
-Access Memory (RAM), leading to memory-mapping errors.
+The primary computational bottleneck arises during the construction of the Buddies 
+Matrix, which has a time and space complexity of $O(n^2)$, where $n$ represents 
+the number of observations in each subsample. As $n$ increases, storing all pairwise
+relationships can exceed available RAM and lead to memory errors.
 
-To address this, the functional pipeline utilizes a minimalist storage approach. 
-Instead of storing redundant information, the package optimizes the memory footprint 
-by only storing unique relationships. By utilizing the symmetry of the pairwise 
-matrix to store only the lower triangle of indices, it effectively halves the 
-required storage for unique relationships. Additionally, the package uses sparse 
-indexing, ensuring that only relationships between observations currently present 
-in a given subsample are tracked during the precomputation phase.
+To address this, cRab uses a more efficient storage strategy. The package reduces 
+redundancy by storing only unique relationships. By utilizing the symmetry 
+of the matrix and keeping only the upper triangle of indices, it effectively cuts
+storage requirements roughly in half. Additionally, the package applies sparse 
+indexing, tracking only relationship between observations present in each subsample.
 
-By reducing the memory footprint of these structures, the cRab package allows larger 
-datasets to be processed on standard hardware without comprising the mathematical 
-rigor behind the CRAB score.
+These optimizations reduce memory demands and allow larger datasets to run on standard
+hardware without sacrificing the accuracy of the CRAB score.
 
 
 ## Synthetic Data Generation
 
-While cRab is designed to validate clusters in real-world datasets, evaluating the
-package’s sensitivity can be done with a controlled dataset where the "ground truth"
-of the cluster structure is known. To explore this, the package includes simulate_mvn(), 
-a utility that allows users to benchmark the CRAB score against datasets with specified
-cluster properties before applying the tool to ambiguous, and unlabeled data.
+While cRab is designed to validate clusters in real-world datasets, controlled simulations
+provide a way to evaluate its sensitivity when the true cluster structure is known. 
+To support this, the package includes simulate_mvn(), a utility that allows users 
+to benchmark the CRAB score on datasets with predefined cluster properties before 
+applying the tool to ambiguous or unlabeled data.
 
-Multivariate Normal (MVN) distributions were intentionally selected for this framework
-because they offer precise control over cluster separation, orientation, and density. 
-By manipulating the covariance structures of these distributions, cRab can simulate
-various degrees of cluster overlap, and geometric tilting. 
+The simulation framework uses Multivariate Normal (MVN) distributions because 
+they offer precise control over cluster separation, orientation, and density. 
+By manipulating the covariance structure, users can introduce varying levels of 
+overlap and geometric distortion, creating a range of clustering scenarios.
 
-Mechanically, simulate_mvn() translates these constraints into data using three 
-primary user inputs: the total number of observations ($n$), the desired number 
-of clusters ($k$), and a variance scalar. By adjusting these parameters, the user 
-can purposely induce cluster overlap, or maintain clearly separated boundaries.
+The simulate_mvn() function generates data using three primary user inputs: the 
+total number of observations ($n$), the desired number of clusters ($k$), and a 
+variance scalar. These parameters allow users to control how distinct or overlapping
+the clusters appear.
 
 ```{r}
 #| label: simulate_mvn() plot example
@@ -920,8 +935,10 @@ data |>
   theme_bw()
 ```
 
-For a single analysis of simulated data, the workflow follows the standard pipeline 
-(Figure 3.7). In this scenario, simulate_mvn() generates a static dataframe which is then passed through the standard preprocessing and parameter-specification layers.
+For a single simulated dataset, the workflow follows the standard pipeline 
+(Figure 3.7). In this scenario, simulate_mvn() generates the data, which then passes
+through standard preprocessing and parameter specification layers before applying 
+the CRAB algorithm.
 
 ```{r}
 #| label: simulate_mvn() example
@@ -947,12 +964,13 @@ data |>
   crab_bake()
 ```
 
-When evaluating the CRAB algorthim's performance across multiple iterations or varying 
-noise levels, the pipeline shifts to a parameter focused workflow (Figure 3.8). This is outlined
-by two primary options. The first approach follows a similar pipeline architecture as 
-the main pipeline. This process begins with passing NULL to crab_prep(), and calling crab_sim_params() to define generative parameters (i.e. num_runs, variance, and n). 
-This is concluded with repeat_simulations(), which replaces crab_bake() and applies 
-the CRAB algorithm to a specified number of datasets with identical parameter constraints. Alternatively, the user can avoid the pipeline and pass in all parameters into
+When evaluating performance across multiple runs or varying noise levels, the 
+workflow shifts to a simulation focused approach (Figure 3.8). One option mirrors
+the standard pipeline by initializing with crab_prep(NULL) and specifying generative
+parameters through crab_sim_params(), such as the number of runs, variance, and 
+sample size. The repeat_simulations() function then replaces crab_bake() and applies
+the CRAB algorithm across multiple simulated datasets with consistent settings.
+Alternatively, users can bypass the pipeline entirely and pass all parameters into
 repeat_simulations() directly.
 
 ```{r}
@@ -982,23 +1000,22 @@ repeat_simulations(min_k = 2, max_k = 5, num_subsamples = 10,
                    cluster_method = "kmeans")
 ```
 
-Chapter 4 provides more insight into the specific performance results of these 
-simulations.
+Chapter 4 explores the results of these simulations in greater detail.
 
 ### Point Diagnostics
 
-Beyond providing a global assessment of cluster stability, the cRab framework also 
-includes specialized diagnostic tools to identify specific drivers of that stability, 
-or rather, the sources of instability. The point contribution() function allows for 
-a granular, observation-level analysis, quantitatively and visually isolating how 
+In addition to providing a global measure of cluster stability, the cRab framework  
+includes diagnostic tools to identify which observations drive that stability or, 
+more importantly, its instability. The point contribution() function allows for 
+a granular, observation-level analysis by quantifying and visualizing how 
 each individual data point impacts the final CRAB score.
 
-In practice, raw instability values are difficult to interpret. While mathematically 
-useful, these values can be visually overwhelming when plotted because the scale 
-of influence varies significantly across different datasets and dimensionalities. 
-To improve interpretability, point_contribution() utilizes a sigmoid transformation. 
-This mapping projects raw contribution metrics onto a bounded 0 to 1 scale, effectively 
-normalizing the influence of each observation.
+In practice, raw instability values are difficult to interpret. Although they are
+mathematically meaningful, their scale often varies across different datasets and 
+dimensionalities, making visualization hard to read. To improve interpretability, 
+point_contribution() applies a sigmoid transformation that maps contributions onto 
+a bounded [0, 1] scale. This transformation standardizes the values and makes relative
+differences easier to interpret.
 
 ```{r}
 #| label: point_contribution() plot example
@@ -1022,14 +1039,22 @@ ggplot(df_scaled, aes(x = x, y = y, color = contributions$singlePointContributio
   labs(color = "Point Contribution Score")
 ```
 
-The sigmoid transformation highlights the “swing voters” within the dataset. These 
-observations are typically located in ambiguous regions, often between cluster boundaries, 
-making them the most likely to switch cluster assignments across subsamples. In 
-Figure 3.9, we see a clear example of this phenomenon. The bright red points are 
-concentrated in the specific areas where clusters determine their boundaries. As 
-a result, they yield a higher contribution to the final CRAB score. This function 
-allows researchers to pinpoint the exact observations that disproportionately drive 
-the final CRAB score.
+The transformation highlights observations that act as “swing voters” in the clustering
+structure. These points are typically located near cluster boundaries, making them 
+the most likely to switch cluster assignments across subsamples. Figure 3.9 illustrates
+this behavior where high contribution points appear as bright red regions concentrated
+near decision boundaries. In contrast, observations that don't change between 
+clusters are labeled in a dark blue color and have a contribution score closer to 0.
+By isolating these observations, the function helps identify which data points 
+disproportionately influence the CRAB score.
+
+
+
+
+
+
+
+
 
 
 
