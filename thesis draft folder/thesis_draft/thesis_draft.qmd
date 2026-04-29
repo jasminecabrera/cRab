@@ -1059,56 +1059,80 @@ disproportionately influence the CRAB score.
 
 
 # Simulation Study
-test w non spherical data too
 
-## Non-Spherical Data
 
-```{r}
-#| eval: false
-#| label: example-table1
-#| echo: false # Use to hide code but not results
-#| tbl-cap: "Example Table Title/Caption"
 
-# set seed for recreation
-set.seed(590)
+## Introduction
 
-# number of observations per cluster
-n <- 300
+This simulation study evaluates the performance and reliability of the CRAB 
+algorithm under controlled conditions. The primary goal is to establish a clear 
+performance baseline by measuring how the CRAB score responds to changes in data 
+structure and cluster complexity.
 
-# generate points from mvnorm disb'n
-sigma1 <- matrix(c(4, 3,
-                   3, 3), nrow = 2)
-cluster1 <- mvrnorm(n, 
-                    mu = c(0, 0), 
-                    Sigma = sigma1)
+The analysis focuses on four key factors: sample size ($n$), cluster variance, the
+number of clusters ($k$), and cluster geometry. Together, these dimensions allow 
+us to evaluate how the CRAB score behaves across a range of conditions, from well 
+separated and minimal noise settings to more ambiguous and complex scenarios.
 
-# generate points from mvnorm disb'n
-sigma2 <- matrix(c(6, 0,
-                   0, 0.25), nrow = 2)
-cluster2 <- mvrnorm(n, 
-                    mu = c(6, 4), 
-                    Sigma = sigma2)
+## Experimental Setup
 
-# generate points from mvnorm disb'n
-sigma3 <- matrix(c(4, 1.5,
-                   1.5, 1), nrow = 2)
-cluster3 <- mvrnorm(n, mu = c(1, -3.5), 
-                    Sigma = sigma3)
+We use simulated data to evaluate the performance of the CRAB algorithm under 
+controlled conditions. Data is generated using the simulate_mvn() function which 
+produces MVN distributions with user-defined parameters. This allows each scenario 
+to follow a known structure, ensuring that differences in performance arise from 
+the parameters being tested rather than uncontrolled variation.
 
-# join points to create data frame
-df <- data.frame(
-  x = c(cluster1[,1], cluster2[,1], cluster3[,1]),
-  y = c(cluster1[,2], cluster2[,2], cluster3[,2]),
-  cluster = factor(rep(c("Cluster 1", "Cluster 2", "Cluster 3"),
-                       each = n)))
+The simulation grid varies three primary variables:
 
-# applying crab
-df |>
-  crab_prep() |>
-  crab_cols(c("x", "y")) |>
-  crab_params(min_k = 2, max_k = 5, num_subsamples = 10, cluster_method = "kmeans") |>
-  crab_bake()
-```
++ **Sample Size:** $n \in \{100, 250, 600\}$ representing small, moderate and larger 
+datasets. 
+
++ **Variance:** $\sigma^2 \in \{0.2, 0.4, 0.6, 0.8\}$ ranging from well-separated 
+clusters to high overlap conditions
+
++ **Number of Clusters:** $k$; while $k = 3$ serves as the primary ground truth, 
+additional values are considered to evaluate how the CRAB score behaves as cluster 
+complexity increases
+
+Each scenario isolates one factor at a time while holding the others fixed. This 
+design allows changes in performance to be directly attributed to the parameter 
+being tested.
+
+Performance is evaluated based on the algorithm’s ability to correctly identify 
+the true number of clusters. Strong results occur when the CRAB score reaches its 
+global minimum at the correct value of $k$, indicating a successful evaluation of 
+the underlying structure. The shape of the score curve provides additional insight, 
+as a clear “pinching point” suggests a well defined clustering solution.
+
+To account for randomness in the simulation process, each scenario is also evaluated 
+across multiple runs using the repeat_simulations() function. This produces a 
+distribution of CRAB scores rather than a single outcome, allowing for a more reliable 
+assessment of stability. Consistent results across runs indicate robust performance, 
+while greater variability reflects sensitivity to noise or overlap.
+
+
+## Spherical Data
+
+| Simulation|Purpose   |N         | Variance  | True k  |Shape    |
+| :-------  |:-------: |:-------: |:-------: |:-------:|-------: |
+| Cluster Identification| Effect of k |250     | 0.5     | 2, 3, 4   |Spherical    |
+| Text      | Text     |  |Text      |Text    | Text    | Text    |
+
+
+
+
+cluster recov, eff k, 250, 0.5, 234
+
+
+
+
+
+
+
+
+
+
+
 
 # Conclusion
 
@@ -1116,6 +1140,7 @@ df |>
 + #better than everybody else
 + future work
 + note that this was only used for k-means
+
 ## Computational Details
 
 The results in this paper were obtained using `R` 4.4.1. `R` itself and all 
