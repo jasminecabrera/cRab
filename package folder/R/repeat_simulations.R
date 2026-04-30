@@ -129,19 +129,23 @@ repeat_simulations <- function(crab_setup = NULL,
   results_list <- list()
   counter <- 1
   
+  # set seed so it starts at the same number specified
+  start_seed <- start_seed - 1
+  
   # loop through variances
   for (var in variance) {
-    
-    # simulate data
-    sim_data <- simulate_mvn(n = n,
-                             variance = var,
-                             desired_k = desired_k)
     
     # loop through number of runs/reps
     for (i in seq_len(num_runs)) {
       
       # alternate seed
       current_seed <- start_seed + i
+      
+      # simulate data
+      sim_data <- simulate_mvn(n = n,
+                               variance = var,
+                               desired_k = desired_k,
+                               start_seed = current_seed)
       
       # call crab()
       sim_result <- crab(data = sim_data,

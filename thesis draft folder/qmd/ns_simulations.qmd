@@ -1,0 +1,421 @@
+---
+title: "ns_simulations"
+format: html
+editor: visual
+---
+
+## Non-Spherical Simulations
+
+### Effect of k
+
+**Fixed:**
+
+-   N: 250
+
+**Test:**
+
+-   k = 2, 3, 4
+
+**Single Run Simulations:**
+
+```{r}
+#| label: k = 2 
+set.seed(590)
+
+# number of observations per cluster
+n <- 250/2
+
+# generate points from mvnorm disb'n
+sigma1 <- matrix(c(4, 3,
+                   3, 3), nrow = 2)
+cluster1 <- mvrnorm(n, 
+                    mu = c(0, 0), 
+                    Sigma = sigma1)
+
+# generate points from mvnorm disb'n
+sigma2 <- matrix(c(6, 0,
+                   0, 0.25), nrow = 2)
+cluster2 <- mvrnorm(n, 
+                    mu = c(6, 4), 
+                    Sigma = sigma2)
+
+# join points to create data frame
+k2_df <- data.frame(
+  X1 = c(cluster1[,1], cluster2[,1]),
+  X2 = c(cluster1[,2], cluster2[,2]))
+
+# scaling
+k2_df_scaled <- k2_df
+k2_df_scaled[,c(1,2)] <- scale(k2_df_scaled[,c(1,2)])
+
+# plot data
+ggplot(k2_df_scaled, aes(x = X1, y = X2)) +
+  geom_point() +
+  theme_minimal() 
+```
+
+```{r}
+#| label: k = 2 crab
+
+k2_ns_df <- k2_df |>
+  crab_prep() |>
+  crab_cols(c("X1", "X2")) |>
+  crab_params(min_k = 2, max_k = 5, num_subsamples = 30, 
+              subsample_prop = 0.85, cluster_method = "kmeans") |>
+  crab_bake()
+
+k2_ns_df
+write.csv(k2_ns_df, "k_crab2_ns.csv", row.names = FALSE)
+```
+
+```{r}
+#| label: k = 3
+set.seed(590)
+
+# number of observations per cluster
+n <- 252/3
+
+# generate points from mvnorm disb'n
+sigma1 <- matrix(c(4, 3,
+                   3, 3), nrow = 2)
+cluster1 <- mvrnorm(n, 
+                    mu = c(0, 0), 
+                    Sigma = sigma1)
+
+# generate points from mvnorm disb'n
+sigma2 <- matrix(c(6, 0,
+                   0, 0.25), nrow = 2)
+cluster2 <- mvrnorm(n, 
+                    mu = c(6, 4), 
+                    Sigma = sigma2)
+
+# generate points from mvnorm disb'n
+sigma3 <- matrix(c(4, 1.5,
+                   1.5, 1), nrow = 2)
+cluster3 <- mvrnorm(n, mu = c(6, -3.5), 
+                    Sigma = sigma3)
+
+# join points to create data frame
+k3_df <- data.frame(
+  X1 = c(cluster1[,1], cluster2[,1], cluster3[,1]),
+  X2 = c(cluster1[,2], cluster2[,2], cluster3[,2]),
+  cluster = factor(rep(c("Cluster 1", "Cluster 2", "Cluster 3"),
+                       each = n)))
+# scaling
+k3_df_scaled <- k3_df
+k3_df_scaled[,c(1,2)] <- scale(k3_df_scaled[,c(1,2)])
+
+# plot data
+ggplot(k3_df_scaled, aes(x = X1, y = X2)) +
+  geom_point() +
+  theme_minimal() 
+```
+
+```{r}
+#| label: k = 3 crab
+
+k3_ns_df <- k3_df |>
+  crab_prep() |>
+  crab_cols(c("X1", "X2")) |>
+  crab_params(min_k = 2, max_k = 5, num_subsamples = 30, 
+              subsample_prop = 0.85, cluster_method = "kmeans") |>
+  crab_bake()
+
+k3_ns_df
+write.csv(k3_ns_df, "k_crab3_ns.csv", row.names = FALSE)
+```
+
+```{r}
+#| label: k = 4
+set.seed(590)
+
+# number of observations per cluster
+n <- 252/4
+
+# generate points from mvnorm disb'n
+sigma1 <- matrix(c(4, 3,
+                   3, 3), nrow = 2)
+cluster1 <- mvrnorm(n, 
+                    mu = c(0, 0), 
+                    Sigma = sigma1)
+
+# generate points from mvnorm disb'n
+sigma2 <- matrix(c(6, 0,
+                   0, 0.25), nrow = 2)
+cluster2 <- mvrnorm(n, 
+                    mu = c(6, 4), 
+                    Sigma = sigma2)
+
+# generate points from mvnorm disb'n
+sigma3 <- matrix(c(4, 1.5,
+                   1.5, 1), nrow = 2)
+cluster3 <- mvrnorm(n, mu = c(4, -3.5), 
+                    Sigma = sigma3)
+
+# generate points from mvnorm disb'n
+sigma4 <- matrix(c(2, 0.5, 
+                   0.5, 1), nrow = 2)
+cluster4 <- mvrnorm(n, mu = c(10, 1), 
+                    Sigma = sigma4)
+
+# join points to create data frame
+k4_df <- data.frame(
+  X1 = c(cluster1[,1], cluster2[,1], cluster3[,1], cluster4[,1]),
+  X2 = c(cluster1[,2], cluster2[,2], cluster3[,2], cluster4[,2]),
+  cluster = factor(rep(c("Cluster 1", "Cluster 2", "Cluster 3", "Cluster 4"),
+                       each = n)))
+# scaling
+k4_df_scaled <- k4_df
+k4_df_scaled[,c(1,2)] <- scale(k4_df_scaled[,c(1,2)])
+
+# plot data
+ggplot(k4_df_scaled, aes(x = X1, y = X2)) +
+  geom_point() +
+  theme_minimal() 
+```
+
+```{r}
+#| label: k = 4 crab
+
+k4_ns_df <- k4_df |>
+  crab_prep() |>
+  crab_cols(c("X1", "X2")) |>
+  crab_params(min_k = 2, max_k = 5, num_subsamples = 30, 
+              subsample_prop = 0.85, cluster_method = "kmeans") |>
+  crab_bake()
+
+k4_ns_df
+write.csv(k3_ns_df, "k_crab4_ns.csv", row.names = FALSE)
+```
+
+### Effect of Sample Size
+
+```{r}
+#| label: 100 ss
+set.seed(590)
+
+# number of observations per cluster
+n <- 102/3
+
+# generate points from mvnorm disb'n
+sigma1 <- matrix(c(4, 3,
+                   3, 3), nrow = 2)
+cluster1 <- mvrnorm(n, 
+                    mu = c(0, 0), 
+                    Sigma = sigma1)
+
+# generate points from mvnorm disb'n
+sigma2 <- matrix(c(6, 0,
+                   0, 0.25), nrow = 2)
+cluster2 <- mvrnorm(n, 
+                    mu = c(6, 4), 
+                    Sigma = sigma2)
+
+# generate points from mvnorm disb'n
+sigma3 <- matrix(c(4, 1.5,
+                   1.5, 1), nrow = 2)
+cluster3 <- mvrnorm(n, mu = c(6, -3.5), 
+                    Sigma = sigma3)
+
+# join points to create data frame
+k3_df <- data.frame(
+  X1 = c(cluster1[,1], cluster2[,1], cluster3[,1]),
+  X2 = c(cluster1[,2], cluster2[,2], cluster3[,2]),
+  cluster = factor(rep(c("Cluster 1", "Cluster 2", "Cluster 3"),
+                       each = n)))
+# scaling
+k3_df_scaled <- k3_df
+k3_df_scaled[,c(1,2)] <- scale(k3_df_scaled[,c(1,2)])
+
+# plot data
+ggplot(k3_df_scaled, aes(x = X1, y = X2)) +
+  geom_point() +
+  theme_minimal() 
+```
+
+```{r}
+#| label: 100 ss crab
+
+ss100_ns_df <- k3_df |>
+  crab_prep() |>
+  crab_cols(c("X1", "X2")) |>
+  crab_params(min_k = 2, max_k = 5, num_subsamples = 30, 
+              subsample_prop = 0.85, cluster_method = "kmeans") |>
+  crab_bake()
+
+ss100_ns_df
+write.csv(ss100_ns_df, "ss100_ns.csv", row.names = FALSE)
+```
+
+```{r}
+#| label: 250 ss
+set.seed(590)
+
+# number of observations per cluster
+n <- 252/3
+
+# generate points from mvnorm disb'n
+sigma1 <- matrix(c(4, 3,
+                   3, 3), nrow = 2)
+cluster1 <- mvrnorm(n, 
+                    mu = c(0, 0), 
+                    Sigma = sigma1)
+
+# generate points from mvnorm disb'n
+sigma2 <- matrix(c(6, 0,
+                   0, 0.25), nrow = 2)
+cluster2 <- mvrnorm(n, 
+                    mu = c(6, 4), 
+                    Sigma = sigma2)
+
+# generate points from mvnorm disb'n
+sigma3 <- matrix(c(4, 1.5,
+                   1.5, 1), nrow = 2)
+cluster3 <- mvrnorm(n, mu = c(6, -3.5), 
+                    Sigma = sigma3)
+
+# join points to create data frame
+k3_df <- data.frame(
+  X1 = c(cluster1[,1], cluster2[,1], cluster3[,1]),
+  X2 = c(cluster1[,2], cluster2[,2], cluster3[,2]),
+  cluster = factor(rep(c("Cluster 1", "Cluster 2", "Cluster 3"),
+                       each = n)))
+# scaling
+k3_df_scaled <- k3_df
+k3_df_scaled[,c(1,2)] <- scale(k3_df_scaled[,c(1,2)])
+
+# plot data
+ggplot(k3_df_scaled, aes(x = X1, y = X2)) +
+  geom_point() +
+  theme_minimal() 
+```
+
+```{r}
+#| label: 250 ss crab
+
+ss250_ns_df <- k3_df |>
+  crab_prep() |>
+  crab_cols(c("X1", "X2")) |>
+  crab_params(min_k = 2, max_k = 5, num_subsamples = 30, 
+              subsample_prop = 0.85, cluster_method = "kmeans") |>
+  crab_bake()
+
+ss250_ns_df
+write.csv(ss250_ns_df, "ss250_ns.csv", row.names = FALSE)
+```
+
+```{r}
+#| label: 400 ss
+set.seed(590)
+
+# number of observations per cluster
+n <- 402/3
+
+# generate points from mvnorm disb'n
+sigma1 <- matrix(c(4, 3,
+                   3, 3), nrow = 2)
+cluster1 <- mvrnorm(n, 
+                    mu = c(0, 0), 
+                    Sigma = sigma1)
+
+# generate points from mvnorm disb'n
+sigma2 <- matrix(c(6, 0,
+                   0, 0.25), nrow = 2)
+cluster2 <- mvrnorm(n, 
+                    mu = c(6, 4), 
+                    Sigma = sigma2)
+
+# generate points from mvnorm disb'n
+sigma3 <- matrix(c(4, 1.5,
+                   1.5, 1), nrow = 2)
+cluster3 <- mvrnorm(n, mu = c(6, -3.5), 
+                    Sigma = sigma3)
+
+# join points to create data frame
+k3_df <- data.frame(
+  X1 = c(cluster1[,1], cluster2[,1], cluster3[,1]),
+  X2 = c(cluster1[,2], cluster2[,2], cluster3[,2]),
+  cluster = factor(rep(c("Cluster 1", "Cluster 2", "Cluster 3"),
+                       each = n)))
+# scaling
+k3_df_scaled <- k3_df
+k3_df_scaled[,c(1,2)] <- scale(k3_df_scaled[,c(1,2)])
+
+# plot data
+ggplot(k3_df_scaled, aes(x = X1, y = X2)) +
+  geom_point() +
+  theme_minimal() 
+```
+
+```{r}
+#| label: 400 ss crab
+
+ss400_ns_df <- k3_df |>
+  crab_prep() |>
+  crab_cols(c("X1", "X2")) |>
+  crab_params(min_k = 2, max_k = 5, num_subsamples = 30, 
+              subsample_prop = 0.85, cluster_method = "kmeans") |>
+  crab_bake()
+
+ss400_ns_df
+write.csv(ss400_ns_df, "ss400_ns.csv", row.names = FALSE)
+```
+
+```{r}
+#| label: 750 ss
+set.seed(590)
+
+# number of observations per cluster
+n <- 750/3
+
+# generate points from mvnorm disb'n
+sigma1 <- matrix(c(4, 3,
+                   3, 3), nrow = 2)
+cluster1 <- mvrnorm(n, 
+                    mu = c(0, 0), 
+                    Sigma = sigma1)
+
+# generate points from mvnorm disb'n
+sigma2 <- matrix(c(6, 0,
+                   0, 0.25), nrow = 2)
+cluster2 <- mvrnorm(n, 
+                    mu = c(6, 4), 
+                    Sigma = sigma2)
+
+# generate points from mvnorm disb'n
+sigma3 <- matrix(c(4, 1.5,
+                   1.5, 1), nrow = 2)
+cluster3 <- mvrnorm(n, mu = c(6, -3.5), 
+                    Sigma = sigma3)
+
+# join points to create data frame
+k3_df <- data.frame(
+  X1 = c(cluster1[,1], cluster2[,1], cluster3[,1]),
+  X2 = c(cluster1[,2], cluster2[,2], cluster3[,2]),
+  cluster = factor(rep(c("Cluster 1", "Cluster 2", "Cluster 3"),
+                       each = n)))
+# scaling
+k3_df_scaled <- k3_df
+k3_df_scaled[,c(1,2)] <- scale(k3_df_scaled[,c(1,2)])
+
+# plot data
+ggplot(k3_df_scaled, aes(x = X1, y = X2)) +
+  geom_point() +
+  theme_minimal() 
+```
+
+```{r}
+#| label: 750 ss crab
+
+ss750_ns_df <- k3_df |>
+  crab_prep() |>
+  crab_cols(c("X1", "X2")) |>
+  crab_params(min_k = 2, max_k = 5, num_subsamples = 30, 
+              subsample_prop = 0.85, cluster_method = "kmeans") |>
+  crab_bake()
+
+ss750_ns_df
+write.csv(ss750_ns_df, "ss750_ns.csv", row.names = FALSE)
+```
+
+### Mixed Shapes

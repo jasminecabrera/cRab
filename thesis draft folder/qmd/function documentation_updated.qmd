@@ -439,6 +439,8 @@ palmerpenguins::penguins |>
 
 -   cluster_method *(string):* specified clustering algorithm
 
+-   start_seed *(integer):* Reproducibility seed for running crab()
+
 **Output:** An updated list containing the dataset, its original column names, the user-selected parameters, and placeholder NULL values for the specified columns.
 
 **Example Code:**
@@ -485,6 +487,8 @@ palmerpenguins::penguins |>
 -   num_runs *(integer)*: number of iterations
 
 -   cluster_method *(string):* specified clustering algorithm
+
+-   start_seed *(integer):* Reproducibility seed for running crab()
 
 **Output:** An updated list containing the data, its original column names, NULL for user-specified columns (since the data is simulated), and the user-defined simulation parameters.
 

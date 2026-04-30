@@ -1,0 +1,109 @@
+---
+title: "penguins simulations"
+format: html
+editor: visual
+---
+
+## Effect of Number of Resamples
+
+```{r}
+penguins <- palmerpenguins::penguins
+```
+
+```{r}
+# crab
+peng_20 <- penguins |>
+  crab_prep() |>
+  crab_cols(c("flipper_length_mm", "bill_length_mm")) |>
+  crab_params(min_k = 2, max_k = 6, subsample_prop = 0.85,
+              num_subsamples = 20, cluster_method = "kmeans") |>
+  crab_bake()
+
+peng_20
+
+write.csv(peng_20, "peng_20.csv", row.names = FALSE)
+```
+
+```{r}
+# crab
+peng_40 <- penguins |>
+  crab_prep() |>
+  crab_cols(c("flipper_length_mm", "bill_length_mm")) |>
+  crab_params(min_k = 2, max_k = 6, subsample_prop = 0.85,
+              num_subsamples = 40, cluster_method = "kmeans") |>
+  crab_bake()
+
+peng_40
+
+write.csv(peng_40, "peng_40.csv", row.names = FALSE)
+```
+
+```{r}
+# crab
+peng_60 <- penguins |>
+  crab_prep() |>
+  crab_cols(c("flipper_length_mm", "bill_length_mm")) |>
+  crab_params(min_k = 2, max_k = 6, subsample_prop = 0.85,
+              num_subsamples = 60, cluster_method = "kmeans") |>
+  crab_bake()
+
+peng_60
+
+write.csv(peng_60, "peng_60.csv", row.names = FALSE)
+```
+
+```{r}
+# crab
+peng_70 <- penguins |>
+  crab_prep() |>
+  crab_cols(c("flipper_length_mm", "bill_length_mm")) |>
+  crab_params(min_k = 2, max_k = 6, subsample_prop = 0.85,
+              num_subsamples = 70, cluster_method = "kmeans") |>
+  crab_bake()
+
+peng_70
+
+write.csv(peng_70, "peng_70.csv", row.names = FALSE)
+```
+
+```{r}
+# crab
+peng_80 <- penguins |>
+  crab_prep() |>
+  crab_cols(c("flipper_length_mm", "bill_length_mm")) |>
+  crab_params(min_k = 2, max_k = 6, subsample_prop = 0.85,
+              num_subsamples = 80, cluster_method = "kmeans") |>
+  crab_bake()
+
+peng_80
+
+write.csv(peng_80, "peng_80.csv", row.names = FALSE)
+```
+
+```{r}
+# crab
+peng_90 <- penguins |>
+  crab_prep() |>
+  crab_cols(c("flipper_length_mm", "bill_length_mm")) |>
+  crab_params(min_k = 2, max_k = 6, subsample_prop = 0.85,
+              num_subsamples = 90, cluster_method = "kmeans") |>
+  crab_bake()
+
+peng_90
+
+write.csv(peng_90, "peng_90.csv", row.names = FALSE)
+```
+
+```{r}
+# crab
+peng_100 <- penguins |>
+  crab_prep() |>
+  crab_cols(c("flipper_length_mm", "bill_length_mm")) |>
+  crab_params(min_k = 2, max_k = 6, subsample_prop = 0.85,
+              num_subsamples = 100, cluster_method = "kmeans") |>
+  crab_bake()
+
+peng_100
+
+write.csv(peng_100, "peng_100.csv", row.names = FALSE)
+```

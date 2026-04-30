@@ -36,6 +36,9 @@
 #'
 #' @param cluster_method
 #' Specified clustering algorithm (i.e. "kmeans")
+#' 
+#' @param start_seed
+#' Reproducibility seed for running crab()
 #'
 #' @returns
 #' An updated list containing the data, its original column names, NULL for
@@ -58,30 +61,31 @@
 
 crab_sim_params <- function(data_info, min_k, max_k, num_subsamples,
                             n = 100, variance, desired_k = 3,
-                            subsample_prop = 0.8, num_runs, cluster_method){
+                            subsample_prop = 0.8, num_runs, cluster_method,
+                            start_seed = 123){
   ### INPUT CHECKS:
   # check min_k and max_k
   if (min_k > max_k){
     stop("Error: min_k must be <= max_k.")}
-
+  
   if (min_k < 0){
     stop("Error: min_k must be > 0.")}
-
+  
   if (max_k < 0){
     stop("Error: max_k must be > 0.")}
-
+  
   # check subsample prop
   if (subsample_prop >= 1){
     stop("Error: subsample_prop must be < 1.")}
-
+  
   # check num_runs
   if (num_runs < 0){
     stop("Error: num_runs must be > 0.")}
-
+  
   # check cluster method
   if (cluster_method != "kmeans"){
     stop("Error: Clustering method does not currently work. Please change to 'kmeans'.")}
-
+  
   ### FUNCTION:
   # update specified params
   data_info$specified_params <- list(
@@ -93,6 +97,7 @@ crab_sim_params <- function(data_info, min_k, max_k, num_subsamples,
     desired_k = desired_k,
     subsample_prop = subsample_prop,
     num_runs = num_runs,
-    cluster_method = cluster_method)
-
+    cluster_method = cluster_method,
+    start_seed = start_seed)
+  
   return(data_info)}

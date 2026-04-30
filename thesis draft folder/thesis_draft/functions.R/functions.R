@@ -434,19 +434,23 @@ repeat_simulations <- function(crab_setup = NULL,
   results_list <- list()
   counter <- 1
 
+  # set seed so it starts at the same number specified
+  start_seed <- start_seed - 1
+  
   # loop through variances
   for (var in variance) {
 
-    # simulate data
-    sim_data <- simulate_mvn(n = n,
-                             variance = var,
-                             desired_k = desired_k)
-
     # loop through number of runs/reps
     for (i in seq_len(num_runs)) {
-
+      
       # alternate seed
       current_seed <- start_seed + i
+      
+      # simulate data
+      sim_data <- simulate_mvn(n = n,
+                               variance = var,
+                               desired_k = desired_k,
+                               start_seed = current_seed)
 
       # call crab()
       sim_result <- crab(data = sim_data,
@@ -528,7 +532,7 @@ crab_cols <- function(data_info, chosen_cols){
 
 ################################################################################
 crab_params <- function(data_info, min_k, max_k, num_subsamples,
-                        subsample_prop = 0.8, cluster_method){
+                        subsample_prop = 0.8, cluster_method, start_seed = 123){
 
   ### INPUT CHECKS:
   # check if data_info is a list
@@ -587,14 +591,16 @@ crab_params <- function(data_info, min_k, max_k, num_subsamples,
     max_k = max_k,
     num_subsamples = num_subsamples,
     subsample_prop = subsample_prop,
-    cluster_method = cluster_method)
+    cluster_method = cluster_method,
+    start_seed = start_seed)
 
   return(data_info)}
 
 ################################################################################
 crab_sim_params <- function(data_info, min_k, max_k, num_subsamples,
                             n = 100, variance, desired_k = 3,
-                            subsample_prop = 0.8, num_runs, cluster_method){
+                            subsample_prop = 0.8, num_runs, cluster_method,
+                            start_seed = 123){
   ### INPUT CHECKS:
   # check min_k and max_k
   if (min_k > max_k){
@@ -629,7 +635,8 @@ crab_sim_params <- function(data_info, min_k, max_k, num_subsamples,
     desired_k = desired_k,
     subsample_prop = subsample_prop,
     num_runs = num_runs,
-    cluster_method = cluster_method)
+    cluster_method = cluster_method,
+    start_seed = start_seed)
 
   return(data_info)}
 
@@ -679,7 +686,8 @@ crab_bake <- function(data_info){
                   max_k = params$max_k,
                   subsample_prop = params$subsample_prop,
                   num_subsamples = params$num_subsamples,
-                  cluster_method = params$cluster_method)
+                  cluster_method = params$cluster_method,
+                start_seed = params$start_seed)
 
   return(score)}
 

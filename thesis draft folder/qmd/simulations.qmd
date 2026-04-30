@@ -5,6 +5,10 @@ format: html
 editor: visual
 ---
 
+```{r}
+library(tidyverse)
+```
+
 ## Spherical Simulations
 
 ### Effect of k
@@ -21,9 +25,10 @@ editor: visual
 
 **Single Run Simulations:**
 
+#### k=2
+
 ```{r}
-#| label: k = 2
-set.seed(590)
+#| label: k = 2 part 1
 
 # generate data
 effect_of_k_data2 <- simulate_mvn(n = 250, variance = 0.5, desired_k = 2)
@@ -39,7 +44,8 @@ k_crab2 <- effect_of_k_data2 |>
   crab_cols(c("X1", "X2")) |>
   crab_params(min_k = 2, max_k = 5, num_subsamples = 30,
               subsample_prop = 0.85,
-              cluster_method = "kmeans") |>
+              cluster_method = "kmeans",
+              start_seed = 123) |>
   crab_bake()
 
 k_crab2
@@ -47,9 +53,59 @@ write.csv(k_crab2, "k_crab2.csv", row.names = FALSE)
 ```
 
 ```{r}
-#| label: k = 3
-set.seed(590)
+#| k = 2 part 2
+# generate data
+effect2_of_k_data2 <- simulate_mvn(n = 250, variance = 0.5, desired_k = 2,
+                                  start_seed = 124)
 
+# plot
+effect2_of_k_data2 |>
+  ggplot(aes(x = X1, y = X2)) +
+  geom_point()
+
+# CRAB
+k_crab2_2 <- effect2_of_k_data2 |>
+  crab_prep() |>
+  crab_cols(c("X1", "X2")) |>
+  crab_params(min_k = 2, max_k = 5, num_subsamples = 30,
+              subsample_prop = 0.85,
+              cluster_method = "kmeans",
+              start_seed = 124) |>
+  crab_bake()
+
+k_crab2_2
+write.csv(k_crab2_2, "k_crab2_2.csv", row.names = FALSE)
+```
+
+```{r}
+#| k = 2 part 3
+# generate data
+effect3_of_k_data2 <- simulate_mvn(n = 250, variance = 0.5, desired_k = 2,
+                                  start_seed = 125)
+
+# plot
+effect3_of_k_data2 |>
+  ggplot(aes(x = X1, y = X2)) +
+  geom_point()
+
+# CRAB
+k_crab2_3 <- effect3_of_k_data2 |>
+  crab_prep() |>
+  crab_cols(c("X1", "X2")) |>
+  crab_params(min_k = 2, max_k = 5, num_subsamples = 30,
+              subsample_prop = 0.85,
+              cluster_method = "kmeans",
+              start_seed = 125) |>
+  crab_bake()
+
+k_crab2_3
+write.csv(k_crab2_3, "k_crab2_3.csv", row.names = FALSE)
+```
+
+#### k = 3
+
+```{r}
+#| label: k = 3 part 1
 # generate data
 effect_of_k_data3 <- simulate_mvn(n = 250, variance = 0.5, desired_k = 3)
 
@@ -64,7 +120,8 @@ k_crab3 <- effect_of_k_data3 |>
   crab_cols(c("X1", "X2")) |>
   crab_params(min_k = 2, max_k = 5, num_subsamples = 30,
               subsample_prop = 0.85,
-              cluster_method = "kmeans") |>
+              cluster_method = "kmeans",
+              start_seed = 123) |>
   crab_bake()
 
 k_crab3
@@ -72,8 +129,57 @@ write.csv(k_crab3, "k_crab3.csv", row.names = FALSE)
 ```
 
 ```{r}
-#| label: k = 4
-set.seed(590)
+#| label: k = 3 part 2
+# generate data
+effect_of_k_data3 <- simulate_mvn(n = 250, variance = 0.5, desired_k = 3)
+
+# plot
+effect_of_k_data3 |>
+  ggplot(aes(x = X1, y = X2)) +
+  geom_point()
+
+# CRAB
+k_crab3_2 <- effect_of_k_data3 |>
+  crab_prep() |>
+  crab_cols(c("X1", "X2")) |>
+  crab_params(min_k = 2, max_k = 5, num_subsamples = 30,
+              subsample_prop = 0.85,
+              cluster_method = "kmeans",
+              start_seed = 124) |>
+  crab_bake()
+
+k_crab3_2
+write.csv(k_crab3_2, "k_crab3_2.csv", row.names = FALSE)
+```
+
+```{r}
+#| label: k = 3 part 3
+# generate data
+effect_of_k_data3 <- simulate_mvn(n = 250, variance = 0.5, desired_k = 3)
+
+# plot
+effect_of_k_data3 |>
+  ggplot(aes(x = X1, y = X2)) +
+  geom_point()
+
+# CRAB
+k_crab3_3 <- effect_of_k_data3 |>
+  crab_prep() |>
+  crab_cols(c("X1", "X2")) |>
+  crab_params(min_k = 2, max_k = 5, num_subsamples = 30,
+              subsample_prop = 0.85,
+              cluster_method = "kmeans",
+              start_seed = 125) |>
+  crab_bake()
+
+k_crab3_3
+write.csv(k_crab3_3, "k_crab3_3.csv", row.names = FALSE)
+```
+
+**k = 4**
+
+```{r}
+#| label: k = 4 part 1
 
 # generate data
 effect_of_k_data4 <- simulate_mvn(n = 250, variance = 0.5, desired_k = 4)
@@ -89,7 +195,8 @@ k_crab4 <- effect_of_k_data4 |>
   crab_cols(c("X1", "X2")) |>
   crab_params(min_k = 2, max_k = 5, num_subsamples = 30,
               subsample_prop = 0.85,
-              cluster_method = "kmeans") |>
+              cluster_method = "kmeans",
+              start_seed = 123) |>
   crab_bake()
 
 k_crab4
@@ -97,11 +204,60 @@ write.csv(k_crab4, "k_crab4.csv", row.names = FALSE)
 
 ```
 
+```{r}
+#| label: k = 4 part 2
+
+# generate data
+effect_of_k_data4 <- simulate_mvn(n = 250, variance = 0.5, desired_k = 4)
+
+# plot
+effect_of_k_data4 |>
+  ggplot(aes(x = X1, y = X2)) +
+  geom_point()
+
+# CRAB
+k_crab4_2 <- effect_of_k_data4 |>
+  crab_prep() |>
+  crab_cols(c("X1", "X2")) |>
+  crab_params(min_k = 2, max_k = 5, num_subsamples = 30,
+              subsample_prop = 0.85,
+              cluster_method = "kmeans", 
+              start_seed = 124) |>
+  crab_bake()
+
+k_crab4_2
+write.csv(k_crab4_2, "k_crab4_2.csv", row.names = FALSE)
+```
+
+```{r}
+#| label: k = 4 part 3
+
+# generate data
+effect_of_k_data4 <- simulate_mvn(n = 250, variance = 0.5, desired_k = 4)
+
+# plot
+effect_of_k_data4 |>
+  ggplot(aes(x = X1, y = X2)) +
+  geom_point()
+
+# CRAB
+k_crab4_3 <- effect_of_k_data4 |>
+  crab_prep() |>
+  crab_cols(c("X1", "X2")) |>
+  crab_params(min_k = 2, max_k = 5, num_subsamples = 30,
+              subsample_prop = 0.85,
+              cluster_method = "kmeans", 
+              start_seed = 125) |>
+  crab_bake()
+
+k_crab4_3
+write.csv(k_crab4_3, "k_crab4_3.csv", row.names = FALSE)
+```
+
 **Multiple Run Simulations:**
 
 ```{r}
 #| label: k = 2 (multiple runs)
-set.seed(590)
 
 k_crab_mult2 <- crab_prep(data = NULL) |>
   crab_sim_params(n = 250, variance = 0.5, desired_k = 2,
@@ -110,13 +266,18 @@ k_crab_mult2 <- crab_prep(data = NULL) |>
                   cluster_method = "kmeans") |>
   repeat_simulations()
 
+k_crab_mult2 |>
+  ggplot(aes(x = factor(k), y = Score)) +
+  geom_boxplot(fill = "pink") +
+  labs(title = "Multiple Seeds for CRAB Score When k = 2", 
+       y = "")
+
 k_crab_mult2
 write.csv(k_crab_mult2, "k_crab_mult2.csv", row.names = FALSE)
 ```
 
 ```{r}
 #| label: k = 3 (multiple runs)
-set.seed(590)
 
 k_crab_mult3 <- crab_prep(data = NULL) |>
   crab_sim_params(n = 250, variance = 0.5, desired_k = 3,
@@ -125,13 +286,18 @@ k_crab_mult3 <- crab_prep(data = NULL) |>
                   cluster_method = "kmeans") |>
   repeat_simulations()
 
+k_crab_mult3 |>
+  ggplot(aes(x = factor(k), y = Score)) +
+  geom_boxplot(fill = "pink") +
+  labs(title = "Multiple Seeds for CRAB Score When k = 3", 
+       y = "")
+
 k_crab_mult3
 write.csv(k_crab_mult3, "k_crab_mult3.csv", row.names = FALSE)
 ```
 
 ```{r}
 #| label: k = 4 (multiple runs)
-set.seed(590)
 
 k_crab_mult4 <- crab_prep(data = NULL) |>
   crab_sim_params(n = 250, variance = 0.5, desired_k = 4,
@@ -139,6 +305,12 @@ k_crab_mult4 <- crab_prep(data = NULL) |>
                   subsample_prop = 0.85, num_runs = 25,
                   cluster_method = "kmeans") |>
   repeat_simulations()
+
+k_crab_mult4 |>
+  ggplot(aes(x = factor(k), y = Score)) +
+  geom_boxplot(fill = "pink") +
+  labs(title = "Multiple Seeds for CRAB Score When k = 4", 
+       y = "")
 
 k_crab_mult4
 write.csv(k_crab_mult4, "k_crab_mult4.csv", row.names = FALSE)
@@ -162,7 +334,6 @@ write.csv(k_crab_mult4, "k_crab_mult4.csv", row.names = FALSE)
 
 ```{r}
 #| label: var = 0.2
-set.seed(590)
 
 # generate data
 effect_of_var_data2 <- simulate_mvn(n = 250, variance = 0.2, desired_k = 3)
@@ -187,7 +358,6 @@ write.csv(var_crab2, "var_crab2.csv", row.names = FALSE)
 
 ```{r}
 #| label: var = 0.5
-set.seed(590)
 
 # generate data
 effect_of_var_data5 <- simulate_mvn(n = 250, variance = 0.5, desired_k = 3)
@@ -212,7 +382,6 @@ write.csv(var_crab5, "var_crab5.csv", row.names = FALSE)
 
 ```{r}
 #| label: var = 0.8
-set.seed(590)
 
 # generate data
 effect_of_var_data8 <- simulate_mvn(n = 250, variance = 0.8, desired_k = 3)
@@ -237,7 +406,6 @@ write.csv(var_crab8, "var_crab8.csv", row.names = FALSE)
 
 ```{r}
 #| label: var = 1
-set.seed(590)
 
 # generate data
 effect_of_var_data1 <- simulate_mvn(n = 250, variance = 1, desired_k = 3)
@@ -264,7 +432,6 @@ write.csv(var_crab1, "var_crab1.csv", row.names = FALSE)
 
 ```{r}
 #| label: var = 0.2, 0.5, 0.8, 1 (multiple runs)
-set.seed(590)
 
 var_crab_mult <- crab_prep(data = NULL) |>
   crab_sim_params(n = 250, variance = c(0.2, 0.5, 0.8, 1), desired_k = 3,
@@ -273,7 +440,13 @@ var_crab_mult <- crab_prep(data = NULL) |>
                   cluster_method = "kmeans") |>
   repeat_simulations()
 
-var_crab_mult
+var_crab_mult |>
+  ggplot(aes(x = factor(k), y = Score)) +
+  geom_boxplot(fill = "pink") +
+  facet_wrap(~var) +
+  labs(title = "Multiple Seeds for CRAB Score", 
+       y = "")
+
 write.csv(var_crab_mult, "var_crab_mult.csv", row.names = FALSE)
 ```
 
@@ -295,7 +468,6 @@ write.csv(var_crab_mult, "var_crab_mult.csv", row.names = FALSE)
 
 ```{r}
 #| label: n = 100
-set.seed(590)
 
 # generate data
 effect_of_ss_data1 <- simulate_mvn(n = 100, variance = 0.5, desired_k = 3)
@@ -320,7 +492,6 @@ write.csv(ss_crab100, "ss_crab100.csv", row.names = FALSE)
 
 ```{r}
 #| label: n = 250
-set.seed(590)
 
 # generate data
 effect_of_ss_data2 <- simulate_mvn(n = 250, variance = 0.5, desired_k = 3)
@@ -345,7 +516,6 @@ write.csv(ss_crab250, "ss_crab250.csv", row.names = FALSE)
 
 ```{r}
 #| label: n = 400
-set.seed(590)
 
 # generate data
 effect_of_ss_data3 <- simulate_mvn(n = 400, variance = 0.5, desired_k = 3)
@@ -370,7 +540,6 @@ write.csv(ss_crab400, "ss_crab400.csv", row.names = FALSE)
 
 ```{r}
 #| label: n = 750
-set.seed(590)
 
 # generate data
 effect_of_ss_data4 <- simulate_mvn(n = 750, variance = 0.5, desired_k = 3)
@@ -397,7 +566,6 @@ write.csv(ss_crab750, "ss_crab750.csv", row.names = FALSE)
 
 ```{r}
 #| label: n = 100 (multiple runs)
-set.seed(590)
 
 ss100_crab_mult <- crab_prep(data = NULL) |>
   crab_sim_params(n = 100, variance = 0.5, desired_k = 3,
@@ -412,7 +580,6 @@ write.csv(ss100_crab_mult, "ss100_crab_mult.csv", row.names = FALSE)
 
 ```{r}
 #| label: n = 250 (multiple runs)
-set.seed(590)
 
 ss250_crab_mult <- crab_prep(data = NULL) |>
   crab_sim_params(n = 250, variance = 0.5, desired_k = 3,
@@ -427,7 +594,6 @@ write.csv(ss250_crab_mult, "ss250_crab_mult.csv", row.names = FALSE)
 
 ```{r}
 #| label: n = 400 (multiple runs) 
-set.seed(590)
 
 ss400_crab_mult <- crab_prep(data = NULL) |>
   crab_sim_params(n = 400, variance = 0.5, desired_k = 3,
@@ -441,8 +607,7 @@ write.csv(ss400_crab_mult, "ss400_crab_mult.csv", row.names = FALSE)
 ```
 
 ```{r}
-#| label: n = 750 (multiple runs) !!!
-set.seed(590)
+#| label: n = 750 (multiple runs) 
 
 ss750_crab_mult <- crab_prep(data = NULL) |>
   crab_sim_params(n = 750, variance = 0.5, desired_k = 3,
