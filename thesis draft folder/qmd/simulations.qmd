@@ -78,6 +78,54 @@ write.csv(k_crab2_2, "k_crab2_2.csv", row.names = FALSE)
 ```
 
 ```{r}
+# generate data
+effect2_of_k_data2 <- simulate_mvn(n = 250, variance = 0.5, desired_k = 2,
+                                  start_seed = 124)
+
+# looking at point contribution
+mean_matrix_mvn <- mean_matrix(data = effect2_of_k_data2,
+                               k = 2,
+                               subsample_prop = 0.85,
+                               num_subsamples = 30,
+                               cluster_method = "kmeans",
+                               start_seed = 124)
+
+# mean matrix
+mvn_contributions <- point_contribution(data = effect2_of_k_data2, 
+                                         mean_matrix = mean_matrix_mvn)
+
+# plot data
+ggplot(effect2_of_k_data2, aes(x = X1, y = X2, 
+                   color = mvn_contributions$singlePointContribution)) +
+  scale_color_gradient(low = "darkblue", high = "red") +
+  geom_point() +
+  theme_minimal() +
+  labs(title = "Original Data with Point Contribution k = 2",
+       color = "Point Contribution")
+
+# looking at point contribution k = 4
+mean_matrix_mvn4 <- mean_matrix(data = effect2_of_k_data2,
+                               k = 4,
+                               subsample_prop = 0.85,
+                               num_subsamples = 30,
+                               cluster_method = "kmeans",
+                               start_seed = 124)
+
+# mean matrix
+mvn_contributions <- point_contribution(data = effect2_of_k_data2, 
+                                         mean_matrix = mean_matrix_mvn4)
+
+# plot data
+ggplot(effect2_of_k_data2, aes(x = X1, y = X2, 
+                   color = mvn_contributions$singlePointContribution)) +
+  scale_color_gradient(low = "darkblue", high = "red") +
+  geom_point() +
+  theme_minimal() +
+  labs(title = "Original Data with Point Contribution k = 4",
+       color = "Point Contribution")
+```
+
+```{r}
 #| k = 2 part 3
 # generate data
 effect3_of_k_data2 <- simulate_mvn(n = 250, variance = 0.5, desired_k = 2,
@@ -131,7 +179,8 @@ write.csv(k_crab3, "k_crab3.csv", row.names = FALSE)
 ```{r}
 #| label: k = 3 part 2
 # generate data
-effect_of_k_data3 <- simulate_mvn(n = 250, variance = 0.5, desired_k = 3)
+effect_of_k_data3 <- simulate_mvn(n = 250, variance = 0.5, desired_k = 3,
+                                  start_seed = 124)
 
 # plot
 effect_of_k_data3 |>
@@ -155,7 +204,8 @@ write.csv(k_crab3_2, "k_crab3_2.csv", row.names = FALSE)
 ```{r}
 #| label: k = 3 part 3
 # generate data
-effect_of_k_data3 <- simulate_mvn(n = 250, variance = 0.5, desired_k = 3)
+effect_of_k_data3 <- simulate_mvn(n = 250, variance = 0.5, desired_k = 3,
+                                  start_seed = 125)
 
 # plot
 effect_of_k_data3 |>
@@ -208,7 +258,8 @@ write.csv(k_crab4, "k_crab4.csv", row.names = FALSE)
 #| label: k = 4 part 2
 
 # generate data
-effect_of_k_data4 <- simulate_mvn(n = 250, variance = 0.5, desired_k = 4)
+effect_of_k_data4 <- simulate_mvn(n = 250, variance = 0.5, desired_k = 4,
+                                  start_seed = 124)
 
 # plot
 effect_of_k_data4 |>
@@ -233,7 +284,8 @@ write.csv(k_crab4_2, "k_crab4_2.csv", row.names = FALSE)
 #| label: k = 4 part 3
 
 # generate data
-effect_of_k_data4 <- simulate_mvn(n = 250, variance = 0.5, desired_k = 4)
+effect_of_k_data4 <- simulate_mvn(n = 250, variance = 0.5, desired_k = 4,
+                                  start_seed = 125)
 
 # plot
 effect_of_k_data4 |>

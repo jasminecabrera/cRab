@@ -38,6 +38,7 @@ library(foreach)
 library(doParallel)
 library(MASS)
 library(gridExtra)
+library(patchwork)
 
 doParallel::registerDoParallel(cores = detectCores() - 5)
 penguins_data <- penguins
@@ -229,7 +230,10 @@ ss_df |>
 ggplot(aes(x = x, y = y)) +
   geom_point() +
   theme_minimal() +
-  labs(title = "")
+  labs(title = "",
+       x = "x",
+       y = "y") +
+  theme(axis.title.y = element_text(angle = 0, vjust = 0.5)) 
 ```
 
 ```{r}
@@ -1085,10 +1089,10 @@ the parameters being tested rather than uncontrolled variation.
 
 The simulation grid varies three primary variables:
 
-+ **Sample Size:** $n \in \{100, 250, 600\}$ representing small, moderate and larger 
++ **Sample Size:** $n \in \{100, 250, 400\}$ representing small, moderate and larger 
 datasets. 
 
-+ **Variance:** $\sigma^2 \in \{0.2, 0.4, 0.6, 0.8\}$ ranging from well-separated 
++ **Variance:** $\sigma^2 \in \{0.2, 0.5, 0.8, 1\}$ ranging from well-separated 
 clusters to high overlap conditions
 
 + **Number of Clusters:** $k$; while $k = 3$ serves as the primary ground truth, 
@@ -1119,25 +1123,51 @@ data. This data is not the most common, but is beneficial to the K-means since K
 naturally favors more spherical data. This should level the playing field for the 
 CRAB algorithm since this use case is for the K-means algorithm.
 
+### The Effect of Sample Size ($n$)
+
+
+### The Effect of Variance ($\sigma^2$)
+
+
 ### The Effect of k
 
-For this simulation, we want to explore if the CRAB algorithm is able to correctly
-identify the true underlying structure. Though $k = 3$ is a good baseline to test,
-it's important that CRAB is able to capture the correct $k$ for a multitude of $k$.
-Here, we test CRAB's ability to identify k = 2, 3, and 4.
+For this simulation, we aim to evaluate whether the CRAB algorithm can correctly
+identify the true underlying structure. While $k = 3$ provides a useful baseline, 
+it is important that CRAB accurately captures the correct $k$ across multiple 
+scenarios. Here, we test CRAB's performance for $k = 2$, $k = 3$, and $k = 4$.
+
+For each scenario, the variance is set to 0.5, and the total sample size is adjusted 
+to ensure an equal number of observations per cluster. For example, when $k = 2$, 
+the total sample size is 250 yielding 125 observations per cluster. For $k = 3$, the 
+total sample size is increased to 252 to allow equal distribution among three clusters.
+
+Each test $k$ value is represented by two types of plots:
+
+1. **"Individual Seeds" Plot:** Three separate runs of the CRAB algorithm
+
+2. **"Multiple Seeds" Plot:** Side by side boxplots summarizing results from 25 
+runs for each $k$ value
+
+The individual seeds provide insight into cases where a particular $k$ value may
+be selected as optimal, which might be less apparent in the aggregated boxplots. 
+The three individual runs correspond to the first three seeds used in the multiple
+seeds boxplots.
 
 ```{r, out.width='90%', out.height='auto'}
 #| label: effect of k, k = 2
 #| echo: false # Use to hide code but not results
 #| message: false
+#| fig-cap: "CRAB Scores for Individual and Multiple Seeds When k = 2"
+
+par(mfrow = c(1, 2))
 
 # load individual k=2 csv
 k2 <- read_csv(here::here("thesis draft folder", "csv",
-                           "simulations", "k_crab2.csv"), na = character())
+                           "simulations_updated", "k_crab2.csv"), na = character())
 k2_2 <- read_csv(here::here("thesis draft folder", "csv",
-                           "simulations", "k_crab2_2.csv"), na = character())
+                           "simulations_updated", "k_crab2_2.csv"), na = character())
 k2_3 <- read_csv(here::here("thesis draft folder", "csv",
-                           "simulations", "k_crab2_3.csv"), na = character())
+                           "simulations_updated", "k_crab2_3.csv"), na = character())
 
 # add source column
 k2$source <- "df1"
@@ -1150,41 +1180,74 @@ k2_df <- bind_rows(k2, k2_2, k2_3)
 
 # load multiple k=2 csv
 k2_mult <- read_csv(here::here("thesis draft folder", "csv",
-                           "simulations", "k_crab_mult2.csv"), na = character())
+                           "simulations_updated", "k_crab_mult2.csv"), na = character())
 
-# plots
-k2_df |>
+
+# get plots on same scale
+score_range <- range(c(k2_df$Score, k2_mult$Score), 
+                     na.rm = TRUE)
+
+# individual runs k = 2
+p1 <- k2_df |>
 ggplot(aes(x = k, y = Score, color = source)) +
   geom_line() +
   geom_point() +
-  labs(title = "Individual Seeds for CRAB Score When k = 2", 
-       color = "",
+  labs(color = "",
        y = "") +
   scale_color_brewer(palette = "Set2") +
   theme_bw() +
-  theme(legend.position = "none")
+  theme(legend.position = "none") + 
+  ylim(score_range)
 
-k2_mult |>
+# multiple runs k = 2
+p2 <- k2_mult |>
   ggplot(aes(x = factor(k), y = Score)) +
   geom_boxplot(fill = "pink") +
-  labs(title = "Multiple Seeds for CRAB Score When k = 2", 
-       y = "")
+  labs(y = "",
+       x = "k") +
+  ylim(score_range)
 
+# output side by side
+p1 + p2 
+```
+
+
+Examining the individual runs for $k = 2$, two out of three runs (purple and orange
+lines) select $k = 4$ as the optimal number of clusters. In particular, the purple 
+line strongly favors $k = 4$, while the orange line shows similar CRAB scores for 
+$k = 2$ and $k = 4$. Unlike the other two seeds, the green line clearly prefers 
+$k = 2$ over $k = 3, 4,  \text{and} \ 5$. Looking at the boxplot of multiple runs,
+$k = 2$ exhibits a wider range of CRAB scores, whereas $k = 4$ has a smaller range
+with scores near 0. Since clusters of 2 can naturally be subdivided, the higher
+variability in CRAB scores for $k = 2$ reflects plausible alternative structures
+rather than an error in the algorithm.
+
+```{r}
+k2_mult |>
+  group_by(run) |>
+  slice_min(Score, n = 1, with_ties = FALSE) |>
+  ungroup() |>
+  count(k) |>
+  complete(k = 2:5, fill = list(n = 0)) |>
+  mutate(`Win Proportion` = paste0(round((n / sum(n)) * 100, 
+                                         1), "%")) |>
+  rename(`Number of Wins` = n) 
 ```
 
 
 ```{r}
 #| label: effect of k, k = 3
 #| echo: false # Use to hide code but not results
-#| eval: false
+#| message: false
+#| fig-cap: "CRAB Scores for Individual and Multiple Seeds When k = 3"
 
 # load individual k=3 csv
 k3 <- read_csv(here::here("thesis draft folder", "csv",
-                           "simulations", "k_crab3.csv"), na = character())
+                           "simulations_updated", "k_crab3.csv"), na = character())
 k3_2 <- read_csv(here::here("thesis draft folder", "csv",
-                           "simulations", "k_crab3_2.csv"), na = character())
+                           "simulations_updated", "k_crab3_2.csv"), na = character())
 k3_3 <- read_csv(here::here("thesis draft folder", "csv",
-                           "simulations", "k_crab3_3.csv"), na = character())
+                           "simulations_updated", "k_crab3_3.csv"), na = character())
 
 # add source column
 k3$source <- "df1"
@@ -1197,41 +1260,51 @@ k3_df <- bind_rows(k3, k3_2, k3_3)
 
 # load multiple k=3 csv
 k3_mult <- read_csv(here::here("thesis draft folder", "csv",
-                           "simulations", "k_crab_mult3.csv"), na = character())
+                           "simulations_updated", "k_crab_mult3.csv"), na = character())
 
 
-# plots
-k3_df |>
+# get plots on same scale
+score_range <- range(c(k3_df$Score, k3_mult$Score), 
+                     na.rm = TRUE)
+
+# individual runs k = 3
+p1 <- k3_df |>
 ggplot(aes(x = k, y = Score, color = source)) +
   geom_line() +
   geom_point() +
-  labs(title = "Individual Seeds for CRAB Score When k = 3", 
-       color = "",
+  labs(color = "",
        y = "") +
   scale_color_brewer(palette = "Set2") +
   theme_bw() +
-  theme(legend.position = "none")
+  theme(legend.position = "none") + 
+  ylim(score_range)
 
-k3_mult |>
+# multiple runs k = 3
+p2 <- k3_mult |>
   ggplot(aes(x = factor(k), y = Score)) +
   geom_boxplot(fill = "pink") +
-  labs(title = "Multiple Seeds for CRAB Score When k = 3", 
-       y = "")
+  labs(y = "",
+       x = "k") +
+  ylim(score_range)
+
+# output side by side
+p1 + p2 
 ```
 
 
 ```{r}
 #| label: effect of k, k = 4
 #| echo: false # Use to hide code but not results
-#| eval: false
+#| message: false
+#| fig-cap: "CRAB Scores for Individual and Multiple Seeds When k = 4"
 
 # load individual k=4 csv
 k4 <- read_csv(here::here("thesis draft folder", "csv",
-                           "simulations", "k_crab4.csv"), na = character())
+                           "simulations_updated", "k_crab4.csv"), na = character())
 k4_2 <- read_csv(here::here("thesis draft folder", "csv",
-                           "simulations", "k_crab4_2.csv"), na = character())
+                           "simulations_updated", "k_crab4_2.csv"), na = character())
 k4_3 <- read_csv(here::here("thesis draft folder", "csv",
-                           "simulations", "k_crab4_3.csv"), na = character())
+                           "simulations_updated", "k_crab4_3.csv"), na = character())
 
 # add source column
 k4$source <- "df1"
@@ -1244,26 +1317,35 @@ k4_df <- bind_rows(k4, k4_2, k4_3)
 
 # load multiple k=4 csv
 k4_mult <- read_csv(here::here("thesis draft folder", "csv",
-                           "simulations", "k_crab_mult4.csv"), na = character())
+                           "simulations_updated", "k_crab_mult4.csv"), na = character())
 
 
-# plots
-k4_df |>
+# get plots on same scale
+score_range <- range(c(k4_df$Score, k4_mult$Score), 
+                     na.rm = TRUE)
+
+# individual runs k = 4
+p1 <- k4_df |>
 ggplot(aes(x = k, y = Score, color = source)) +
   geom_line() +
   geom_point() +
-  labs(title = "Individual Seeds for CRAB Score When k = 2", 
-       color = "",
+  labs(color = "",
        y = "") +
   scale_color_brewer(palette = "Set2") +
   theme_bw() +
-  theme(legend.position = "none")
+  theme(legend.position = "none") + 
+  ylim(score_range)
 
-k4_mult |>
+# multiple runs k = 4
+p2 <- k4_mult |>
   ggplot(aes(x = factor(k), y = Score)) +
   geom_boxplot(fill = "pink") +
-  labs(title = "Multiple Seeds for CRAB Score When k = 4", 
-       y = "")
+  labs(y = "",
+       x = "k") +
+  ylim(score_range)
+
+# output side by side
+p1 + p2 
 ```
 
 
