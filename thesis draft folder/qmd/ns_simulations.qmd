@@ -52,6 +52,10 @@ k2_df_scaled[,c(1,2)] <- scale(k2_df_scaled[,c(1,2)])
 ggplot(k2_df_scaled, aes(x = X1, y = X2)) +
   geom_point() +
   theme_minimal() 
+
+ggplot(k3_df_scaled, aes(x = X1, y = X2)) +
+  geom_point() +
+  theme_minimal() 
 ```
 
 ```{r}
@@ -60,11 +64,12 @@ ggplot(k2_df_scaled, aes(x = X1, y = X2)) +
 k2_ns_df <- k2_df |>
   crab_prep() |>
   crab_cols(c("X1", "X2")) |>
-  crab_params(min_k = 2, max_k = 5, num_subsamples = 30, 
-              subsample_prop = 0.85, cluster_method = "kmeans") |>
+  crab_params(min_k = 2, max_k = 5, num_subsamples = 60, 
+              subsample_prop = 0.9, cluster_method = "kmeans") |>
   crab_bake()
 
 k2_ns_df
+write.csv(k2_df, "k_crab2_datans.csv", row.names = FALSE)
 write.csv(k2_ns_df, "k_crab2_ns.csv", row.names = FALSE)
 ```
 
@@ -109,19 +114,21 @@ k3_df_scaled[,c(1,2)] <- scale(k3_df_scaled[,c(1,2)])
 ggplot(k3_df_scaled, aes(x = X1, y = X2)) +
   geom_point() +
   theme_minimal() 
+
 ```
 
 ```{r}
 #| label: k = 3 crab
-
+k3_df
 k3_ns_df <- k3_df |>
   crab_prep() |>
   crab_cols(c("X1", "X2")) |>
-  crab_params(min_k = 2, max_k = 5, num_subsamples = 30, 
-              subsample_prop = 0.85, cluster_method = "kmeans") |>
+  crab_params(min_k = 2, max_k = 5, num_subsamples = 60, 
+              subsample_prop = 0.90, cluster_method = "kmeans") |>
   crab_bake()
 
 k3_ns_df
+write.csv(k3_df, "k_crab3_datans.csv", row.names = FALSE)
 write.csv(k3_ns_df, "k_crab3_ns.csv", row.names = FALSE)
 ```
 
@@ -180,12 +187,13 @@ ggplot(k4_df_scaled, aes(x = X1, y = X2)) +
 k4_ns_df <- k4_df |>
   crab_prep() |>
   crab_cols(c("X1", "X2")) |>
-  crab_params(min_k = 2, max_k = 5, num_subsamples = 30, 
-              subsample_prop = 0.85, cluster_method = "kmeans") |>
+  crab_params(min_k = 2, max_k = 5, num_subsamples = 60, 
+              subsample_prop = 0.9, cluster_method = "kmeans") |>
   crab_bake()
 
 k4_ns_df
-write.csv(k3_ns_df, "k_crab4_ns.csv", row.names = FALSE)
+write.csv(k4_df, "k_crab4_datans.csv", row.names = FALSE)
+write.csv(k4_ns_df, "k_crab4_ns.csv", row.names = FALSE)
 ```
 
 ### Effect of Sample Size
@@ -231,6 +239,8 @@ k3_df_scaled[,c(1,2)] <- scale(k3_df_scaled[,c(1,2)])
 ggplot(k3_df_scaled, aes(x = X1, y = X2)) +
   geom_point() +
   theme_minimal() 
+
+write.csv(k3_df_scaled, "ss100data_ns.csv", row.names = FALSE)
 ```
 
 ```{r}
@@ -288,6 +298,92 @@ k3_df_scaled[,c(1,2)] <- scale(k3_df_scaled[,c(1,2)])
 ggplot(k3_df_scaled, aes(x = X1, y = X2)) +
   geom_point() +
   theme_minimal() 
+
+write.csv(k3_df_scaled, "ss250data_ns.csv", row.names = FALSE)
+
+k3_df_mm <- k3_df_scaled |>
+  dplyr::select(-cluster)
+
+# mean matrix
+mean_matrix_250_k3 <- mean_matrix(data = k3_df_mm,
+                               k = 3,
+                               subsample_prop = 0.85,
+                               num_subsamples = 30,
+                               cluster_method = "kmeans")
+
+# get contributions
+mvn250_contributions_k3 <- point_contribution(data = k3_df_mm, 
+                                         mean_matrix = mean_matrix_250_k3)
+
+
+# mean matrix
+mean_matrix_250_k2 <- mean_matrix(data = k3_df_mm,
+                               k = 2,
+                               subsample_prop = 0.85,
+                               num_subsamples = 30,
+                               cluster_method = "kmeans")
+
+# get contributions
+mvn250_contributions_k2 <- point_contribution(data = k3_df_mm, 
+                                         mean_matrix = mean_matrix_250_k2)
+
+
+# plot data
+ggplot(k3_df_mm, aes(x = X1, y = X2, 
+                   color = mvn250_contributions_k3$singlePointContribution)) +
+  scale_color_gradient(low = "darkblue", high = "red") +
+  geom_point() +
+  theme_minimal() +
+  labs(title = "Original Data with Point Contribution for k = 3",
+       color = "Point Contribution")
+
+ggplot(k3_df_mm, aes(x = X1, y = X2, 
+                   color = mvn250_contributions_k2$singlePointContribution)) +
+  scale_color_gradient(low = "darkblue", high = "red") +
+  geom_point() +
+  theme_minimal() +
+  labs(title = "Original Data with Point Contribution for k = 2",
+       color = "Point Contribution")
+
+# km
+km1 <- kmeans(k3_df_mm, centers = 3, nstart = 25)
+
+# plot
+ggplot(k3_df_mm) +
+  geom_point(aes(x = X1, 
+                 y = X2, 
+                 color = factor(km1$cluster))) +
+  geom_point(data = data.frame(km1$centers), 
+             aes(x = X1, y = X2), size = 2) +
+  theme_minimal() +
+  labs(title = "kMeans Cluster Assignments",
+       color = "Cluster Assignment")
+
+# km
+km2 <- kmeans(k3_df_mm, centers = 2, nstart = 25)
+
+# plot
+ggplot(k3_df_mm) +
+  geom_point(aes(x = X1, 
+                 y = X2, 
+                 color = factor(km2$cluster))) +
+  geom_point(data = data.frame(km2$centers), 
+             aes(x = X1, y = X2), size = 2) +
+  theme_minimal() +
+  labs(title = "kMeans Cluster Assignments",
+       color = "Cluster Assignment")
+
+mvn250_contributions_k3 |>
+  arrange(desc(singlePointContribution))
+
+mvn250_contributions_k2 |>
+  arrange(desc(singlePointContribution))
+
+
+write.csv(k3_df_mm, "ns250data.csv", row.names = FALSE)
+
+write.csv(mvn250_contributions_k3, "k3_250pc.csv", row.names = FALSE)
+write.csv(mvn250_contributions_k2, "k2_250pc.csv", row.names = FALSE)
 ```
 
 ```{r}
@@ -345,6 +441,8 @@ k3_df_scaled[,c(1,2)] <- scale(k3_df_scaled[,c(1,2)])
 ggplot(k3_df_scaled, aes(x = X1, y = X2)) +
   geom_point() +
   theme_minimal() 
+
+write.csv(k3_df_scaled, "ss400data_ns.csv", row.names = FALSE)
 ```
 
 ```{r}

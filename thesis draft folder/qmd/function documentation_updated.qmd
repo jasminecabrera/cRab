@@ -595,4 +595,9 @@ mvn_contributions <- point_contribution(data = mvn_df,
 mvn_df |>
 ggplot(aes(x = X1, y = X2, 
            color = mvn_contributions$singlePointContribution)) +
-  scale_color_gradient(low = "darkblue", high = "red"
+  scale_color_gradient(low = "darkblue", high = "red") +
+  geom_point() +
+  theme_minimal() +
+  labs(title = "Original Data with Point Contribution",
+       color = "Point Contribution")
+```

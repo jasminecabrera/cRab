@@ -80,7 +80,7 @@ write.csv(k_crab2_2, "k_crab2_2.csv", row.names = FALSE)
 ```{r}
 # generate data
 effect2_of_k_data2 <- simulate_mvn(n = 250, variance = 0.5, desired_k = 2,
-                                  start_seed = 124)
+                                  start_seed = 125)
 
 # looking at point contribution
 mean_matrix_mvn <- mean_matrix(data = effect2_of_k_data2,
@@ -88,7 +88,7 @@ mean_matrix_mvn <- mean_matrix(data = effect2_of_k_data2,
                                subsample_prop = 0.85,
                                num_subsamples = 30,
                                cluster_method = "kmeans",
-                               start_seed = 124)
+                               start_seed = 125)
 
 # mean matrix
 mvn_contributions <- point_contribution(data = effect2_of_k_data2, 
@@ -109,7 +109,7 @@ mean_matrix_mvn4 <- mean_matrix(data = effect2_of_k_data2,
                                subsample_prop = 0.85,
                                num_subsamples = 30,
                                cluster_method = "kmeans",
-                               start_seed = 124)
+                               start_seed = 125)
 
 # mean matrix
 mvn_contributions <- point_contribution(data = effect2_of_k_data2, 
@@ -406,6 +406,8 @@ var_crab2 <- effect_of_var_data2 |>
 
 var_crab2
 write.csv(var_crab2, "var_crab2.csv", row.names = FALSE)
+
+write.csv(effect_of_var_data2, "var_crab_data2.csv", row.names = FALSE)
 ```
 
 ```{r}
@@ -430,6 +432,8 @@ var_crab5 <- effect_of_var_data5 |>
 
 var_crab5
 write.csv(var_crab5, "var_crab5.csv", row.names = FALSE)
+
+write.csv(effect_of_var_data5, "var_crab_data5.csv", row.names = FALSE)
 ```
 
 ```{r}
@@ -454,6 +458,8 @@ var_crab8 <- effect_of_var_data8 |>
 
 var_crab8
 write.csv(var_crab8, "var_crab8.csv", row.names = FALSE)
+
+write.csv(effect_of_var_data8, "var_crab_data8.csv", row.names = FALSE)
 ```
 
 ```{r}
@@ -478,6 +484,8 @@ var_crab1 <- effect_of_var_data1 |>
 
 var_crab1
 write.csv(var_crab1, "var_crab1.csv", row.names = FALSE)
+
+write.csv(effect_of_var_data1, "var_crab_data1.csv", row.names = FALSE)
 ```
 
 **Multiple Run Simulations:**
@@ -540,6 +548,8 @@ ss_crab100 <- effect_of_ss_data1 |>
 
 ss_crab100
 write.csv(ss_crab100, "ss_crab100.csv", row.names = FALSE)
+
+write.csv(effect_of_ss_data1, "ssdata_crab100.csv", row.names = FALSE)
 ```
 
 ```{r}
@@ -564,6 +574,8 @@ ss_crab250 <- effect_of_ss_data2 |>
 
 ss_crab250
 write.csv(ss_crab250, "ss_crab250.csv", row.names = FALSE)
+
+write.csv(effect_of_ss_data2, "ssdata_crab250.csv", row.names = FALSE)
 ```
 
 ```{r}
@@ -588,6 +600,8 @@ ss_crab400 <- effect_of_ss_data3 |>
 
 ss_crab400
 write.csv(ss_crab400, "ss_crab400.csv", row.names = FALSE)
+
+write.csv(effect_of_ss_data3, "ssdata_crab400.csv", row.names = FALSE)
 ```
 
 ```{r}

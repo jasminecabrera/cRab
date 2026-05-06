@@ -10,19 +10,19 @@
 \def\keywords{Clustering, Data Science, k-Means.} % Make sure to end this in a . (i.e. Some, Thing, Interesting.)
 
 \def\abstract{%
-Unsupervised clustering algorithms such as k-Means and Hierarchical Clustering
-are commonly used in research and academia. While many different scoring methods
-have been developed to determine the most optimal number of clusters (i.e.
-the Elbow Method, Silhouette Score, etc.), their vague results and initial
-assumptions about the data, present the need for a new approach in finding the
-optimal k number of clusters. To address this, a
-new cluster scoring method, the CRAB algorithm, was created. This approach works
-specifically with k-Means and utilizes random subsampling of the data along with
-the classification of its pairwise points. The constructed definition of “Buddies”
-and “Rivals” provides insight into which observation points tend to stick together
-and which tend to be further apart. For research and educational purposes, an R
-package is being built, implementing different functions to help understand the
-many capabilities of the cRab algorithm.
+Unsupervised clustering often faces the challenge of determining the correct number 
+of clusters in the absence of a true target variable. Traditional methods such
+as the Elbow Method and the Silhouette Score can produce ambiguous results and rely on 
+assumptions about cluster shape or separation. To address this, we created the 
+Clustering Rivals and Buddies (CRAB) algorithm which evaluates clusters based on 
+stability across multiple subsamples. CRAB uses pairwise classifications to identify 
+points that consistently group together called "Buddies" and points that remain 
+separated caled "Rivals". Applied with k-Means, CRAB accurately recovers underlying 
+cluster structures in both spherical and non-spherical datasets, even under varying 
+sample sizes and variances. An accompanying R package implements CRAB with a tidy 
+workflow and easy to follow syntax, making it accessible for research and educational 
+use. By emphasizing stability, CRAB offers a robust alternative for selecting cluster 
+numbers in datasets where traditional methods may fall short.
 
 }
 

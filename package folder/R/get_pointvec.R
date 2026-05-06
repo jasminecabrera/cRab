@@ -46,4 +46,5 @@ get_pointvec <- function(i, mean_matrix_score) {
   # grab all abs vals of i, removing NAs
   res_vec <- c(row, col)
   res_vec <- abs(res_vec[!is.na(res_vec)])
+  
   return(res_vec)}
